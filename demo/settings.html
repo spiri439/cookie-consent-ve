@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Cookie Settings</title>
+  <link rel="stylesheet" href="cookieconsent.css"/>
+  <style>
+    body{font-family:sans-serif;background:#f8fafc;margin:0}
+    .wrap{max-width:780px;margin:0 auto;padding:24px}
+    h1{margin:0 0 12px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .btn{padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:#f3f4f6;cursor:pointer}
+    .btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Cookie Settings</h1>
+    <p>Manage which cookie categories you allow. Changes apply immediately.</p>
+    <div class="card">
+      <div class="actions">
+        <button id="btn-open" class="btn primary">Open Preferences</button>
+        <button id="btn-consent" class="btn">Show Consent Banner</button>
+        <button id="btn-reset" class="btn">Reset Consent</button>
+      </div>
+    </div>
+    <pre id="cookies" style="margin-top:12px"></pre>
+  </div>
+
+  <script src="cookieconsent.umd.js"></script>
+  <script>
+    CookieConsent.run({
+      manageScriptTags: true,
+      categories: {
+        necessary: { enabled: true, readOnly: true },
+        analytics: {},
+        marketing: {}
+      },
+      language: {
+        default: 'en',
+        translations: {
+          en: {
+            consentModal: {
+              title: 'Your privacy choices',
+              description: 'Use the preferences to enable only the categories you agree with.',
+              acceptAllBtn: 'Accept all',
+              acceptNecessaryBtn: 'Reject all'
+            },
+            preferencesModal: {
+              title: 'Cookie Preferences',
+              acceptAllBtn: 'Accept all',
+              savePreferencesBtn: 'Save preferences',
+              acceptNecessaryBtn: 'Reject all',
+              sections: [
+                { title: 'Strictly necessary', description: 'Always enabled for essential functionality.' },
+                { title: 'Analytics', description: 'Helps us improve the website.' },
+                { title: 'Marketing', description: 'Personalized ads and remarketing.' }
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    function updateCookies(){
+      document.getElementById('cookies').textContent = 'Cookies: '+document.cookie;
+    }
+
+    document.getElementById('btn-open').addEventListener('click', function(){
+      CookieConsent.showPreferences();
+    });
+    document.getElementById('btn-consent').addEventListener('click', function(){
+      CookieConsent.show();
+    });
+    document.getElementById('btn-reset').addEventListener('click', function(){
+      CookieConsent.reset();
+      setTimeout(function(){ CookieConsent.show(); updateCookies(); }, 50);
+    });
+
+    // Auto-open preferences when landing on settings page
+    window.addEventListener('load', function(){
+      setTimeout(function(){ CookieConsent.showPreferences(); }, 100);
+      updateCookies();
+      setInterval(updateCookies, 2000);
+    });
+  </script>
+</body>
+</html>
+
+

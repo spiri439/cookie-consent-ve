@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>CookieConsent (Real-World Example)</title>
+  <link rel="stylesheet" href="cookieconsent.css"/>
+  <style>body{font-family:sans-serif;padding:32px;max-width:700px;margin:auto;background:#f8fafc}</style>
+</head>
+<body>
+  <h1>CookieConsent — Real-World Blocking Example</h1>
+  <p>This demo will <b>not load</b> analytics or marketing code, nor set those cookies,<br>
+  until consent is granted. Try <b>Accept all</b> / <b>Reject all</b> / <b>Preferences</b>.<br>
+  You can safely inspect the cookies/console and see that <b>no Google/Facebook/3P</b> cookies are set prior to acceptance, even with “external” scripts present below.</p>
+
+  <h3>Analytics (Google Analytics-like) [<code>data-category="analytics"</code>]</h3>
+  <script type="text/plain" data-category="analytics" src="https://www.googletagmanager.com/gtag/js?id=G-JZZZZZZZZZ"></script>
+  <script type="text/plain" data-category="analytics">
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-JZZZZZZZZZ');
+    console.info('[analytics] Google Analytics code ACTIVATED due to consent!');
+    document.cookie = '_ga_consent_demo=1; SameSite=Lax; Path=/; Max-Age=600';
+  </script>
+  <h3>Marketing (Facebook Pixel-like) [<code>data-category="marketing"</code>]</h3>
+  <script type="text/plain" data-category="marketing">
+    window._fbpDemo = true;
+    document.cookie = '_fbp_consent_demo=1; SameSite=Lax; Path=/; Max-Age=600';
+    console.info('[marketing] Facebook Pixel code ACTIVATED due to consent!');
+  </script>
+  <h3>Necessary</h3>
+  <script>
+    // Always runs
+    document.cookie = 'ccve_necessary=1; SameSite=Lax; Path=/; Max-Age=1200';
+  </script>
+
+  <pre id="cookies"></pre>
+  <p style="margin-top:8px">
+    <a href="#" data-cc="show-preferencesModal">Cookie settings</a>
+  </p>
+  <script src="cookieconsent.umd.js"></script>
+  <script>
+    CookieConsent.run({
+      manageScriptTags: true,
+      categories: {
+        necessary: { enabled: true, readOnly: true, description: 'Strictly necessary for site operation.' },
+        analytics: {
+          enabled: false,
+          description: 'Used to collect anonymous stats to improve website.',
+          autoClear: {
+            reloadPage: true,
+            cookies: [
+              { name: /^(_ga|_gid|_gcl_au|__utm|_uet|_ga_consent_demo)/ }
+            ]
+          }
+        },
+        marketing: {
+          enabled: false,
+          description: 'Used for delivering relevant advertising.',
+          autoClear: {
+            reloadPage: true,
+            cookies: [
+              { name: /^(_fbp|fr|hubspotutk|intercom-session|tawk_?uuid|datadog|_fbp_consent_demo)/ }
+            ]
+          }
+        }
+      },
+      language: {
+        default: 'en',
+        translations: {
+          en: {
+            consentModal: {
+              title: '🍪 We use cookies!',
+              description: 'We use cookies to analyze traffic and show personalized content. Choose your consent below.',
+              acceptAllBtn: 'Accept all',
+              acceptNecessaryBtn: 'Reject all',
+              showPreferencesBtn: 'Manage preferences',
+            },
+            preferencesModal: {
+              title: 'Cookie preferences',
+              acceptAllBtn: 'Accept all',
+              savePreferencesBtn: 'Save preferences',
+              acceptNecessaryBtn: 'Reject all',
+              closeIconLabel: 'Close modal',
+              sections: [
+                {
+                  title: 'Strictly necessary cookies',
+                  description: 'Always on. Required for core functionality.',
+                  linkedCategory: 'necessary'
+                },
+                {
+                  title: 'Analytics cookies',
+                  description: 'Help us understand usage and improve our site.',
+                  linkedCategory: 'analytics'
+                },
+                {
+                  title: 'Marketing cookies',
+                  description: 'Used for delivering relevant advertising.',
+                  linkedCategory: 'marketing'
+                }
+              ]
+            }
+          }
+        }
+      }
+    });
+    function showCookies(){
+      document.getElementById('cookies').textContent = 'Cookies: '+document.cookie;
+    }
+    showCookies();
+    setInterval(showCookies, 2000);
+  </script>
+</body>
+</html>
+
+

@@ -1,0 +1,10 @@
+.ccve-banner{position:fixed;right:16px;bottom:16px;left:16px;max-width:720px;margin:auto;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.12);padding:14px;display:flex;gap:12px;align-items:center;z-index:99999}
+.ccve-text{flex:1;color:#333;font:14px/1.4 system-ui,Arial}
+.ccve-actions{display:flex;gap:8px}
+.ccve-btn{background:#f3f4f6;border:1px solid #d1d5db;border-radius:6px;padding:8px 12px;cursor:pointer}
+.ccve-accept{background:#2563eb;color:#fff;border-color:#2563eb}
+.ccve-reject{background:#e5e7eb}
+.ccve-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:99999}
+.ccve-modal{background:#fff;max-width:540px;width:92%;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:18px}
+.ccve-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+
