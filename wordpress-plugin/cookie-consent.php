@@ -123,8 +123,40 @@ class CookieConsent_Plugin {
         <script>
         (function(){
             // FIRST: Delete any existing analytics/marketing cookies immediately
+            // BUT ONLY IF THEY'RE NOT ACCEPTED!
             function deleteBlockedCookies() {
                 if (!document.cookie) return;
+                
+                // Read preferences from cookie
+                var preferences = null;
+                try {
+                    var cookies = document.cookie.split('; ');
+                    for (var idx = 0; idx < cookies.length; idx++) {
+                        var parts = cookies[idx].split('=');
+                        if (parts[0].trim() === 'cc_cookie') {
+                            preferences = JSON.parse(decodeURIComponent(parts[1]));
+                            break;
+                        }
+                    }
+                } catch(e) {}
+                
+                // Build accepted categories set
+                var acceptedCategories = {};
+                if (preferences && preferences.categories && Array.isArray(preferences.categories)) {
+                    for (var catIdx = 0; catIdx < preferences.categories.length; catIdx++) {
+                        acceptedCategories[preferences.categories[catIdx]] = true;
+                    }
+                }
+                
+                // If analytics/marketing are accepted, DON'T delete them!
+                var analyticsAccepted = acceptedCategories['analytics'] === true;
+                var marketingAccepted = acceptedCategories['marketing'] === true;
+                
+                // If both are accepted, skip deletion entirely
+                if (analyticsAccepted && marketingAccepted) {
+                    return;
+                }
+                
                 var cookies = document.cookie.split('; ');
                 var analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/, /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/, /^_gat_/, /^_gcl/, /^_uetsid/, /^_uetvid/];
                 var marketingPatterns = [/^_fbp/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/, /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/, /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/, /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/, /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/];
@@ -139,23 +171,38 @@ class CookieConsent_Plugin {
                     var cookieName = cookies[i].split('=')[0].trim();
                     if (cookieName === 'cc_cookie') continue;
                     
-                    var isBlocked = false;
+                    var isAnalytics = false;
+                    var isMarketing = false;
+                    
+                    // Check if it's an analytics cookie
                     for (var j = 0; j < analyticsPatterns.length; j++) {
                         if (analyticsPatterns[j].test(cookieName)) {
-                            isBlocked = true;
+                            isAnalytics = true;
                             break;
                         }
                     }
-                    if (!isBlocked) {
+                    
+                    // Check if it's a marketing cookie
+                    if (!isAnalytics) {
                         for (var k = 0; k < marketingPatterns.length; k++) {
                             if (marketingPatterns[k].test(cookieName)) {
-                                isBlocked = true;
+                                isMarketing = true;
                                 break;
                             }
                         }
                     }
                     
-                    if (isBlocked) {
+                    // Only delete if:
+                    // 1. It's an analytics cookie AND analytics is NOT accepted
+                    // 2. It's a marketing cookie AND marketing is NOT accepted
+                    var shouldDelete = false;
+                    if (isAnalytics && !analyticsAccepted) {
+                        shouldDelete = true;
+                    } else if (isMarketing && !marketingAccepted) {
+                        shouldDelete = true;
+                    }
+                    
+                    if (shouldDelete) {
                         // Delete with ALL possible combinations - cookies can have various domain/path settings
                         // CRITICAL: Cookies with .domain format need exact domain match to delete
                         var paths = ['/', '/index.html', ''];
