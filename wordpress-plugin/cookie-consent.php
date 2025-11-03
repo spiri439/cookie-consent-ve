@@ -298,9 +298,21 @@ class CookieConsent_Plugin {
                             // DO NOT SET THE COOKIE - Block it completely
                             // Also delete it immediately in case it was set before guard
                             setTimeout(function() {
+                                var hostname = window.location.hostname;
+                                var domainParts = hostname.split('.');
+                                var rootDomain = domainParts.length > 1 ? domainParts.slice(-2).join('.') : hostname;
+                                var dotDomain = '.' + rootDomain;
+                                var parentDomain = domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname;
+                                
+                                // Delete with ALL domain combinations - cookies with .domain format need exact match
                                 document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
-                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + window.location.hostname;
-                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + window.location.hostname;
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + hostname;
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + hostname;
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + dotDomain;
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + rootDomain;
+                                if (domainParts.length > 1) {
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + parentDomain;
+                                }
                             }, 0);
                             return;
                         }
