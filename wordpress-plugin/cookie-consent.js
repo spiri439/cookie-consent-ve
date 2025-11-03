@@ -549,7 +549,15 @@
     
     let categoriesHtml = categories.map(categoryKey => {
       const category = STATE.config.categories[categoryKey];
-      const isChecked = currentPrefs.includes(categoryKey);
+      
+      // For readOnly categories, always check them (they're always enabled)
+      let isChecked;
+      if (category.readOnly) {
+        isChecked = true; // ReadOnly categories are always enabled
+      } else {
+        isChecked = currentPrefs.includes(categoryKey);
+      }
+      
       const isDisabled = category.readOnly;
       
       return `
