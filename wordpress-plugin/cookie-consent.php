@@ -126,12 +126,16 @@ class CookieConsent_Plugin {
             function deleteBlockedCookies() {
                 if (!document.cookie) return;
                 var cookies = document.cookie.split('; ');
-                var analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/, /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/];
+                var analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/, /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/, /^_gat_/, /^_gcl/, /^_uetsid/, /^_uetvid/];
                 var marketingPatterns = [/^_fbp/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/, /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/, /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/, /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/, /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/];
                 var domain = window.location.hostname;
+                var domainParts = domain.split('.');
+                var parentDomain = domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : domain;
+                
                 for (var i = 0; i < cookies.length; i++) {
                     var cookieName = cookies[i].split('=')[0].trim();
                     if (cookieName === 'cc_cookie') continue;
+                    
                     var isBlocked = false;
                     for (var j = 0; j < analyticsPatterns.length; j++) {
                         if (analyticsPatterns[j].test(cookieName)) {
@@ -147,18 +151,33 @@ class CookieConsent_Plugin {
                             }
                         }
                     }
+                    
                     if (isBlocked) {
-                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
-                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + domain;
-                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + domain;
+                        // Delete with ALL possible combinations
+                        var paths = ['/', '/index.html'];
+                        var domains = [domain, '.' + domain, parentDomain];
+                        
+                        for (var p = 0; p < paths.length; p++) {
+                            for (var d = 0; d < domains.length; d++) {
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p] + ';domain=' + domains[d];
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p];
+                            }
+                        }
                     }
                 }
             }
             
-            // Delete immediately
+            // Delete immediately and continuously
             deleteBlockedCookies();
-            // Delete aggressively every 100ms
-            setInterval(deleteBlockedCookies, 100);
+            // Delete VERY aggressively every 50ms
+            setInterval(deleteBlockedCookies, 50);
+            // Also delete on any DOM events
+            if (document.addEventListener) {
+                document.addEventListener('DOMContentLoaded', deleteBlockedCookies);
+                window.addEventListener('load', deleteBlockedCookies);
+                window.addEventListener('focus', deleteBlockedCookies);
+                document.addEventListener('visibilitychange', deleteBlockedCookies);
+            }
             
             // Install cookie guard IMMEDIATELY - before any other scripts can run
             if (typeof document === 'undefined' || typeof Object === 'undefined' || typeof Object.defineProperty === 'undefined') return;
