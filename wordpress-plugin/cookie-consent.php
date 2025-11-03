@@ -95,16 +95,20 @@ class CookieConsent_Plugin {
         $sanitized['cookie_expiry'] = isset($input['cookie_expiry']) ? absint($input['cookie_expiry']) : 365;
         $sanitized['reload_on_change'] = isset($input['reload_on_change']) ? sanitize_text_field($input['reload_on_change']) : 'no';
         
-        // Categories
+        // Categories - preserve existing if not submitted, or merge with defaults
+        $default_categories = $this->get_default_settings()['categories'];
         if (isset($input['categories']) && is_array($input['categories'])) {
             foreach ($input['categories'] as $key => $category) {
                 $sanitized['categories'][$key] = array(
                     'enabled' => isset($category['enabled']) ? sanitize_text_field($category['enabled']) : 'no',
                     'readonly' => isset($category['readonly']) ? sanitize_text_field($category['readonly']) : 'no',
-                    'name' => isset($category['name']) ? sanitize_text_field($category['name']) : '',
-                    'description' => isset($category['description']) ? sanitize_textarea_field($category['description']) : ''
+                    'name' => isset($category['name']) ? sanitize_text_field($category['name']) : (isset($default_categories[$key]['name']) ? $default_categories[$key]['name'] : ''),
+                    'description' => isset($category['description']) ? sanitize_textarea_field($category['description']) : (isset($default_categories[$key]['description']) ? $default_categories[$key]['description'] : '')
                 );
             }
+        } else {
+            // If no categories submitted, keep existing ones or use defaults
+            $sanitized['categories'] = isset($this->settings['categories']) ? $this->settings['categories'] : $default_categories;
         }
         
         return $sanitized;

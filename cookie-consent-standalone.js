@@ -290,8 +290,9 @@
           // Extract cookie name from "name=value; attributes..."
           const cookieName = String(value).split('=')[0].trim();
           
-          // Always allow our own consent cookie
-          if (cookieName === STATE.config.cookieName) {
+          // Always allow our own consent cookie (check config or use default)
+          const consentCookieName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
+          if (cookieName === consentCookieName) {
             nativeCookieSetter(value);
             return;
           }
@@ -316,9 +317,9 @@
           const isMarketing = marketingPatterns.some(pattern => pattern.test(cookieName));
           
           // If no preferences yet, block ALL analytics/marketing cookies
-          if (!STATE.preferences) {
+          if (!STATE.preferences || !STATE.preferences.categories) {
             if (isAnalytics || isMarketing) {
-              console.log('Cookie blocked until consent:', cookieName);
+              console.log('🚫 Cookie blocked until consent:', cookieName);
               return; // Don't set the cookie
             }
             // Allow other cookies (necessary ones) when no preferences
@@ -331,11 +332,12 @@
           
           if ((isAnalytics && !accepted.has('analytics')) || 
               (isMarketing && !accepted.has('marketing'))) {
-            console.log('Cookie blocked (category not accepted):', cookieName);
+            console.log('🚫 Cookie blocked (category not accepted):', cookieName);
             return;
           }
           
           // All checks passed, allow the cookie
+          console.log('✅ Cookie allowed:', cookieName);
           nativeCookieSetter(value);
         }
       });
@@ -410,11 +412,12 @@
   function createStyles() {
     const styles = document.createElement('style');
     styles.textContent = `
-      .cc-main { position: fixed; z-index: 999999; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .cc-main { position: fixed; z-index: 999999 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; pointer-events: none; }
       .cc-main * { box-sizing: border-box; }
+      .cc-main > * { pointer-events: auto; }
       
       /* Banner */
-      .cc-banner { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 24px; max-width: 520px; }
+      .cc-banner { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 24px; max-width: 520px; display: block !important; visibility: visible !important; opacity: 1 !important; }
       .cc-theme-dark .cc-banner { background: #1a1a1a; border-color: #333; color: #fff; }
       
       .cc-banner__title { font-size: 18px; font-weight: 600; margin: 0 0 12px; color: #111; }
@@ -479,7 +482,8 @@
       
       /* Responsive Design */
       @media (max-width: 768px) {
-        .cc-banner { max-width: calc(100% - 20px); padding: 20px; margin: 10px; }
+        .cc-main { width: 100%; }
+        .cc-banner { max-width: calc(100% - 20px) !important; padding: 20px !important; margin: 10px !important; width: calc(100% - 20px) !important; }
         .cc-banner__title { font-size: 16px; }
         .cc-banner__text { font-size: 13px; margin-bottom: 16px; }
         .cc-banner__actions { flex-direction: column; }
