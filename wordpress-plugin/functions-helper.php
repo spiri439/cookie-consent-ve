@@ -7,12 +7,22 @@
  */
 
 // Load cookie consent script with highest priority (before other scripts)
+// NOTE: This is only needed if plugin loads too late
+// The plugin already loads in HEAD, but this gives even higher priority
 function cc_load_cookie_consent_early() {
+    // Get plugin directory URL
+    $plugin_url = plugin_dir_url(__DIR__ . '/cookie-consent.php');
+    if (!$plugin_url) {
+        $plugin_url = plugins_url('cookie-consent-ve/cookie-consent.js');
+    } else {
+        $plugin_url = $plugin_url . 'cookie-consent.js';
+    }
+    
     // Only load if plugin is not already doing it
     if (!wp_script_is('cookie-consent', 'enqueued')) {
         wp_enqueue_script(
-            'cookie-consent',
-            plugin_dir_url(__FILE__) . 'cookie-consent.js',
+            'cookie-consent-early',
+            $plugin_url,
             array(),
             '1.0.1',
             false // Load in HEAD
