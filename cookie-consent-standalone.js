@@ -397,7 +397,7 @@
       .cc-theme-dark .cc-banner__text { color: #ccc; }
       
       .cc-banner__actions { display: flex; gap: 12px; flex-wrap: wrap; }
-      .cc-banner__btn { padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #d1d5db; transition: all 0.2s; }
+      .cc-banner__btn { padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid #d1d5db; transition: all 0.2s; pointer-events: auto; position: relative; z-index: 10; }
       .cc-banner__btn--primary { background: #2563eb; color: #fff; border-color: #2563eb; }
       .cc-banner__btn--primary:hover { background: #1d4ed8; }
       .cc-banner__btn--secondary { background: #f3f4f6; color: #333; }
@@ -448,6 +448,7 @@
       
       .cc-modal__footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end; }
       .cc-theme-dark .cc-modal__footer { border-color: #333; }
+      .cc-modal__footer button, .cc-banner__btn { pointer-events: auto !important; z-index: 10 !important; cursor: pointer !important; }
       
       /* Position variants */
       .cc-position-bottom-right { bottom: 20px; right: 20px; }
@@ -502,19 +503,47 @@
     mainContainer.appendChild(banner);
     STATE.bypassInterceptor = false;
     
-    // Add event listeners
+    // Add event listeners with better handling
     banner.querySelectorAll('[data-cc-action]').forEach(btn => {
-      btn.addEventListener('click', function(e) {
+      // Remove any existing listeners
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      // Add click listener to new button
+      newBtn.addEventListener('click', function(e) {
+        console.log('Banner button clicked:', this.getAttribute('data-cc-action'));
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
+        
         const action = this.getAttribute('data-cc-action');
-        if (action === 'accept') {
-          acceptAll();
-        } else if (action === 'reject') {
-          rejectAll();
-        } else if (action === 'settings') {
-          showModal();
+        console.log('Action:', action);
+        
+        try {
+          if (action === 'accept') {
+            console.log('Calling acceptAll()');
+            acceptAll();
+          } else if (action === 'reject') {
+            console.log('Calling rejectAll()');
+            rejectAll();
+          } else if (action === 'settings') {
+            console.log('Calling showModal()');
+            showModal();
+          }
+        } catch (error) {
+          console.error('Error handling button click:', error);
         }
+        
+        return false;
+      }, true); // Use capture phase
+      
+      // Also add mouseup as backup
+      newBtn.addEventListener('mouseup', function(e) {
+        console.log('Button mouseup:', this.getAttribute('data-cc-action'));
+        const action = this.getAttribute('data-cc-action');
+        if (action === 'accept') acceptAll();
+        else if (action === 'reject') rejectAll();
+        else if (action === 'settings') showModal();
       });
     });
     
@@ -596,15 +625,39 @@
     
     // Event listeners for buttons
     modal.querySelectorAll('[data-cc-action]').forEach(btn => {
-      btn.addEventListener('click', function(e) {
+      // Remove any existing listeners
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      newBtn.addEventListener('click', function(e) {
+        console.log('Modal button clicked:', this.getAttribute('data-cc-action'));
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
+        
         const action = this.getAttribute('data-cc-action');
-        if (action === 'close' || action === 'cancel') {
-          hideModal();
-        } else if (action === 'save') {
-          saveFromModal();
+        console.log('Modal action:', action);
+        
+        try {
+          if (action === 'close' || action === 'cancel') {
+            console.log('Calling hideModal()');
+            hideModal();
+          } else if (action === 'save') {
+            console.log('Calling saveFromModal()');
+            saveFromModal();
+          }
+        } catch (error) {
+          console.error('Error handling modal button click:', error);
         }
+        
+        return false;
+      }, true);
+      
+      // Backup with mouseup
+      newBtn.addEventListener('mouseup', function(e) {
+        const action = this.getAttribute('data-cc-action');
+        if (action === 'close' || action === 'cancel') hideModal();
+        else if (action === 'save') saveFromModal();
       });
     });
     
@@ -659,9 +712,11 @@
   }
 
   function rejectAll() {
+    console.log('rejectAll() called');
     const categories = Object.keys(STATE.config.categories).filter(cat => 
       STATE.config.categories[cat].readOnly
     );
+    console.log('Rejecting, keeping only:', categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
     if (STATE.config.reloadOnChange) {
@@ -670,13 +725,27 @@
   }
 
   function showModal() {
+    console.log('showModal() called');
+    if (!document.body) {
+      console.error('Document body not ready');
+      return;
+    }
     if (STATE.modalElement) {
+      console.log('Showing existing modal');
       STATE.modalElement.classList.add('show');
       STATE.modalShown = true;
     } else {
+      console.log('Creating new modal');
       STATE.modalElement = createModal();
-      setTimeout(() => STATE.modalElement.classList.add('show'), 10);
-      STATE.modalShown = true;
+      if (STATE.modalElement) {
+        setTimeout(() => {
+          STATE.modalElement.classList.add('show');
+          STATE.modalShown = true;
+          console.log('Modal shown');
+        }, 10);
+      } else {
+        console.error('Failed to create modal');
+      }
     }
   }
 

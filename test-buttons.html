@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Button Test - Cookie Consent</title>
+  <script src="cookie-consent-standalone.js"></script>
+  <script>
+    console.log('Starting test...');
+    CookieConsent.init({
+      categories: {
+        necessary: { enabled: true, readOnly: true, name: 'Necessary', description: 'Essential.' },
+        analytics: { enabled: false, name: 'Analytics', description: 'Analytics.' },
+        marketing: { enabled: false, name: 'Marketing', description: 'Marketing.' }
+      },
+      autoShow: true
+    });
+    
+    // Test after a delay
+    setTimeout(() => {
+      console.log('Testing buttons...');
+      const banner = document.querySelector('.cc-banner');
+      if (banner) {
+        console.log('Banner found:', banner);
+        const buttons = banner.querySelectorAll('button');
+        console.log('Buttons found:', buttons.length);
+        buttons.forEach((btn, i) => {
+          console.log(`Button ${i}:`, btn.textContent, btn.className);
+          btn.addEventListener('click', () => {
+            console.log('Button clicked:', btn.textContent);
+          });
+        });
+      } else {
+        console.error('Banner not found!');
+      }
+    }, 1000);
+  </script>
+  <style>
+    body { padding: 40px; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>Button Test</h1>
+  <p>Check console for button information.</p>
+</body>
+</html>
+
