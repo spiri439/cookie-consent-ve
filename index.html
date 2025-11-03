@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Consent VE - Automatic Cookie & Script Blocking</title>
+  
+  <!-- Cookie Consent VE - Standalone -->
+  <script src="cookie-consent-standalone.js"></script>
+  
+  <script>
+    CookieConsent.init({
+      categories: {
+        necessary: {
+          enabled: true,
+          readOnly: true,
+          name: 'Necessary',
+          description: 'Essential cookies required for website functionality.'
+        },
+        analytics: {
+          enabled: false,
+          name: 'Analytics',
+          description: 'Help us understand how visitors interact with our website.'
+        },
+        marketing: {
+          enabled: false,
+          name: 'Marketing',
+          description: 'Used for delivering personalized content and ads.'
+        }
+      },
+      position: 'bottom-right',
+      theme: 'light',
+      autoShow: true
+    });
+  </script>
+  
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 60px;
+    }
+    h1 {
+      font-size: 3em;
+      margin: 0 0 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .subtitle {
+      font-size: 1.3em;
+      opacity: 0.95;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin: 30px 0;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #667eea;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 15px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 30px 0;
+    }
+    .feature {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    .feature h3 {
+      margin-top: 0;
+      color: #667eea;
+    }
+    .btn {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      margin: 5px;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: #6c757d;
+    }
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #ffc107;
+      margin: 20px 0;
+    }
+    .demo-section {
+      background: #e7f3ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    footer {
+      text-align: center;
+      color: white;
+      padding: 40px 20px;
+      margin-top: 60px;
+    }
+    .links {
+      margin: 20px 0;
+    }
+    .links a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      opacity: 0.9;
+    }
+    .links a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🍪 Cookie Consent VE</h1>
+      <p class="subtitle">Automatic Cookie & Script Blocking - Zero Code Changes Required</p>
+      <p>GDPR-compliant cookie consent with intelligent detection</p>
+    </header>
+
+    <div class="card">
+      <h2>✨ Key Features</h2>
+      <div class="feature-grid">
+        <div class="feature">
+          <h3>🛡️ Automatic Blocking</h3>
+          <p>Automatically detects and blocks analytics/marketing cookies AND scripts without any code modifications.</p>
+        </div>
+        <div class="feature">
+          <h3>🚀 Zero Setup</h3>
+          <p>Works with your existing Google Analytics, Facebook Pixel, and other tracking code.</p>
+        </div>
+        <div class="feature">
+          <h3>📊 Smart Detection</h3>
+          <p>Pattern-based detection for Google Analytics, Facebook Pixel, and more tracking services.</p>
+        </div>
+        <div class="feature">
+          <h3>✅ GDPR Compliant</h3>
+          <p>Full consent management with preferences modal and automatic cookie clearing.</p>
+        </div>
+        <div class="feature">
+          <h3>🎨 Customizable</h3>
+          <p>5 banner positions, light/dark themes, and fully customizable categories.</p>
+        </div>
+        <div class="feature">
+          <h3>📱 Responsive</h3>
+          <p>Works perfectly on desktop, tablet, and mobile devices.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚀 Quick Start</h2>
+      <p>Include the script in your <code>&lt;head&gt;</code> and initialize:</p>
+      <pre style="background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; overflow-x: auto;"><code>&lt;script src="cookie-consent-standalone.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  CookieConsent.init({
+    categories: {
+      necessary: { enabled: true, readOnly: true },
+      analytics: { enabled: false },
+      marketing: { enabled: false }
+    }
+  });
+&lt;/script&gt;</code></pre>
+      
+      <div class="highlight">
+        <strong>🎉 That's it!</strong> Your existing analytics and marketing code will be automatically blocked until consent is given.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔍 Automatic Detection</h2>
+      <p>The plugin automatically detects and blocks:</p>
+      <ul>
+        <li><strong>Analytics:</strong> Google Analytics, Google Tag Manager, analytics.js, gtag()</li>
+        <li><strong>Marketing:</strong> Facebook Pixel, fbevents.js, fbq(), Facebook tracking</li>
+        <li><strong>Cookies:</strong> _ga, _gid, _fbp, and other common tracking cookies</li>
+      </ul>
+      
+      <div class="demo-section">
+        <h3>🧪 Live Demo</h3>
+        <p>Check the browser console (F12) to see automatic blocking in action!</p>
+        <p>The banner at the bottom-right appeared automatically on first visit.</p>
+        <button class="btn" onclick="CookieConsent.showPreferences()">Open Preferences</button>
+        <button class="btn btn-secondary" onclick="CookieConsent.reset()">Reset & Show Banner</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📚 Documentation & Demos</h2>
+      <p>Explore more examples and documentation:</p>
+      <a href="standalone-example.html" class="btn">Standalone Example</a>
+      <a href="auto-gate-demo.html" class="btn">Auto-Gating Demo</a>
+      <a href="test-debug.html" class="btn btn-secondary">Debug Tools</a>
+    </div>
+
+    <div class="card">
+      <h2>🔗 Resources</h2>
+      <p>
+        <strong>Website:</strong> <a href="https://vesrl.ro" target="_blank">vesrl.ro</a><br>
+        <strong>GitHub:</strong> <a href="https://github.com/spiri439/cookie-consent-ve" target="_blank">cookie-consent-ve</a><br>
+        <strong>License:</strong> MIT (Free for commercial use)
+      </p>
+    </div>
+  </div>
+
+  <footer>
+    <p>Cookie Consent VE - Automatic Cookie & Script Blocking</p>
+    <div class="links">
+      <a href="https://vesrl.ro">Website</a>
+      <a href="https://github.com/spiri439/cookie-consent-ve">GitHub</a>
+      <a href="QUICK-START.md">Quick Start</a>
+      <a href="INSTALLATION.md">Installation</a>
+    </div>
+  </footer>
+
+  <!-- Example: These scripts will be automatically blocked until consent -->
+  <!-- Google Analytics - automatically blocked -->
+  <script>
+    // This would normally set _ga cookie - but it's blocked!
+    console.log('This script runs, but cookies are blocked until consent');
+  </script>
+  
+  <!-- Facebook Pixel - automatically blocked -->
+  <script>
+    // This would normally set _fbp cookie - but it's blocked!
+    console.log('This script runs, but cookies are blocked until consent');
+  </script>
+</body>
+</html>
