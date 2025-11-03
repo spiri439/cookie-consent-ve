@@ -181,16 +181,15 @@ class CookieConsent_Plugin {
             'button' => 'no'
         ), $atts);
         
-        $is_button = ($atts['button'] === 'yes' || $atts['button'] === 'true');
-        $tag = $is_button ? 'button' : 'a';
-        $attr = $is_button ? '' : 'href="#"';
-        $onclick = 'onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); } else { alert(\'Cookie Consent not loaded\'); }"';
+        $is_button = ($atts['button'] === 'yes' || $atts['button'] === 'true' || $atts['button'] === '1');
+        
+        $onclick = 'onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); } else { console.warn(\'Cookie Consent not loaded\'); }"';
         
         if ($is_button) {
-            return '<button type="button" class="' . esc_attr($atts['class']) . '" ' . $onclick . '>' . 
+            return '<button type="button" class="' . esc_attr($atts['class']) . ' cc-settings-button" ' . $onclick . '>' . 
                    esc_html($atts['text']) . '</button>';
         } else {
-            return '<a ' . $attr . ' class="' . esc_attr($atts['class']) . '" ' . $onclick . '>' . 
+            return '<a href="#" class="' . esc_attr($atts['class']) . '" ' . $onclick . '>' . 
                    esc_html($atts['text']) . '</a>';
         }
     }
@@ -351,8 +350,20 @@ class CookieConsent_Plugin {
             
             <div style="margin-top: 40px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
                 <h2><?php _e('Usage', 'cookie-consent'); ?></h2>
-                <p><?php _e('To add a cookie settings link in your content, use the shortcode:', 'cookie-consent'); ?></p>
-                <code>[cc_settings text="Cookie Settings"]</code>
+                
+                <h3><?php _e('Shortcode', 'cookie-consent'); ?></h3>
+                <p><?php _e('Add a cookie settings link anywhere in your content using:', 'cookie-consent'); ?></p>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><code>[cc_settings]</code> - <?php _e('Simple link with default text', 'cookie-consent'); ?></li>
+                    <li><code>[cc_settings text="Manage Cookies"]</code> - <?php _e('Custom text', 'cookie-consent'); ?></li>
+                    <li><code>[cc_settings text="Cookie Preferences" button="yes"]</code> - <?php _e('Display as button', 'cookie-consent'); ?></li>
+                </ul>
+                
+                <h3 style="margin-top: 20px;"><?php _e('Widget', 'cookie-consent'); ?></h3>
+                <p><?php _e('Go to Appearance > Widgets and add "Cookie Settings" widget to any widget area.', 'cookie-consent'); ?></p>
+                
+                <h3 style="margin-top: 20px;"><?php _e('Gutenberg Block', 'cookie-consent'); ?></h3>
+                <p><?php _e('Search for "Cookie Settings" in the block inserter.', 'cookie-consent'); ?></p>
                 
                 <h3 style="margin-top: 20px;"><?php _e('Gated Scripts', 'cookie-consent'); ?></h3>
                 <p><?php _e('To gate your scripts by consent, add these attributes to script tags:', 'cookie-consent'); ?></p>
