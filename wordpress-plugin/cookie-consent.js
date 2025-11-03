@@ -1007,6 +1007,11 @@
   // Expose to global scope
   window.CookieConsent = CookieConsent;
 
+  // CRITICAL: Install cookie guard IMMEDIATELY when script loads
+  // This prevents cookies from being set BEFORE init() is called
+  // (e.g., Google Analytics scripts that load early in <head>)
+  installCookieGuard();
+
   // Auto-initialize if config provided via data attribute
   if (document.currentScript && document.currentScript.dataset.config) {
     try {
