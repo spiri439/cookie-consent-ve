@@ -58,6 +58,7 @@
     modalShown: false,
     cookieGuardInstalled: false,
     scriptInterceptorInstalled: false,
+    bypassInterceptor: false,
     pendingScripts: []
   };
 
@@ -128,8 +129,16 @@
       const originalAppendChild = Node.prototype.appendChild;
       const originalInsertBefore = Node.prototype.insertBefore;
       
+      // Flag to bypass our own DOM operations
+      STATE.bypassInterceptor = false;
+      
       // Intercept script insertion
       Node.prototype.appendChild = function(child) {
+        // Bypass for our own DOM operations
+        if (STATE.bypassInterceptor) {
+          return originalAppendChild.call(this, child);
+        }
+        
         if (shouldBlockScript(child)) {
           console.log('Script blocked:', child.src || '(inline)');
           return child; // Return child without adding to DOM
@@ -138,6 +147,11 @@
       };
       
       Node.prototype.insertBefore = function(newNode, referenceNode) {
+        // Bypass for our own DOM operations
+        if (STATE.bypassInterceptor) {
+          return originalInsertBefore.call(this, newNode, referenceNode);
+        }
+        
         if (shouldBlockScript(newNode)) {
           console.log('Script blocked:', newNode.src || '(inline)');
           return newNode; // Return child without adding to DOM
@@ -455,6 +469,19 @@
       return null;
     }
     
+    // Create main container if it doesn't exist
+    let mainContainer = document.getElementById('cc-main');
+    if (!mainContainer) {
+      STATE.bypassInterceptor = true;
+      mainContainer = document.createElement('div');
+      mainContainer.id = 'cc-main';
+      mainContainer.className = 'cc-main';
+      document.body.appendChild(mainContainer);
+      STATE.bypassInterceptor = false;
+    }
+    
+    // Create banner
+    STATE.bypassInterceptor = true;
     const banner = document.createElement('div');
     banner.className = `cc-banner cc-position-${STATE.config.position}`;
     banner.innerHTML = `
@@ -470,11 +497,14 @@
       </div>
     `;
     
-    document.body.appendChild(banner);
+    mainContainer.appendChild(banner);
+    STATE.bypassInterceptor = false;
     
     // Add event listeners
     banner.querySelectorAll('[data-cc-action]').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         const action = this.getAttribute('data-cc-action');
         if (action === 'accept') {
           acceptAll();
@@ -493,6 +523,17 @@
     if (!document.body) {
       console.error('CookieConsent: document.body not ready. Please call after DOMContentLoaded.');
       return null;
+    }
+    
+    STATE.bypassInterceptor = true;
+    
+    // Create or get main container
+    let mainContainer = document.getElementById('cc-main');
+    if (!mainContainer) {
+      mainContainer = document.createElement('div');
+      mainContainer.id = 'cc-main';
+      mainContainer.className = 'cc-main';
+      document.body.appendChild(mainContainer);
     }
     
     const overlay = document.createElement('div');
@@ -540,11 +581,14 @@
     `;
     
     overlay.appendChild(modal);
-    document.body.appendChild(overlay);
+    mainContainer.appendChild(overlay);
+    STATE.bypassInterceptor = false;
     
     // Event listeners
     modal.querySelectorAll('[data-cc-action]').forEach(btn => {
-      btn.addEventListener('click', function() {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         const action = this.getAttribute('data-cc-action');
         if (action === 'close' || action === 'cancel') {
           hideModal();

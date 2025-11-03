@@ -111,25 +111,36 @@ class CookieConsent_Plugin {
     }
     
     public function enqueue_scripts() {
+        // Load script in footer to ensure DOM is ready
         wp_enqueue_script(
             'cookie-consent',
             CC_PLUGIN_URL . 'cookie-consent.js',
             array(),
             CC_VERSION,
-            false
+            true // Load in footer
         );
-        
-        wp_localize_script('cookie-consent', 'ccData', array(
-            'config' => $this->get_js_config()
-        ));
     }
     
     public function output_config() {
         ?>
         <script>
-        if (typeof CookieConsent !== 'undefined') {
-            CookieConsent.init(<?php echo json_encode($this->get_js_config()); ?>);
-        }
+        (function() {
+            // Wait for DOM and script to be ready
+            function initCookieConsent() {
+                if (typeof CookieConsent !== 'undefined') {
+                    CookieConsent.init(<?php echo json_encode($this->get_js_config()); ?>);
+                } else {
+                    // Retry if script not loaded yet
+                    setTimeout(initCookieConsent, 50);
+                }
+            }
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initCookieConsent);
+            } else {
+                initCookieConsent();
+            }
+        })();
         </script>
         <?php
     }
