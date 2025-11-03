@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Consent Debug Test</title>
+  <script src="cookie-consent-standalone.js"></script>
+  <script>
+    console.log('Script loaded, initializing CookieConsent...');
+    
+    // Initialize immediately
+    if (typeof CookieConsent !== 'undefined') {
+      console.log('CookieConsent found, initializing...');
+      CookieConsent.init({
+        categories: {
+          necessary: {
+            enabled: true,
+            readOnly: true,
+            name: 'Necessary',
+            description: 'Essential cookies.'
+          },
+          analytics: {
+            enabled: false,
+            name: 'Analytics',
+            description: 'Website analytics.'
+          },
+          marketing: {
+            enabled: false,
+            name: 'Marketing',
+            description: 'Ads.'
+          }
+        },
+        autoShow: true,
+        position: 'bottom-right'
+      });
+      
+      console.log('CookieConsent initialized successfully');
+      console.log('Try: CookieConsent.show() in console to manually show banner');
+    } else {
+      console.error('CookieConsent not found! Check script path.');
+    }
+  </script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .debug {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Cookie Consent Debug Test</h1>
+  
+  <p>If you see this page, the script loaded. Check the console for messages.</p>
+  
+  <div class="debug">
+    <h2>Debug Controls</h2>
+    <p>Open browser console (F12) and check for errors.</p>
+    <button onclick="CookieConsent.show()">Show Banner</button>
+    <button onclick="CookieConsent.showPreferences()">Show Preferences</button>
+    <button onclick="console.log(CookieConsent.getPreferences())">Log Preferences</button>
+    <button onclick="CookieConsent.reset()">Reset & Show</button>
+    <button onclick="document.cookie='cc_cookie=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; location.reload();">Clear Cookie & Reload</button>
+  </div>
+  
+  <div class="debug">
+    <h2>Common Issues</h2>
+    <ul>
+      <li><strong>Script not loading:</strong> Check browser console for 404 errors</li>
+      <li><strong>Cookie already set:</strong> Click "Clear Cookie & Reload" button above</li>
+      <li><strong>Banner not showing:</strong> Try clicking "Show Banner" button</li>
+      <li><strong>Wrong path:</strong> Ensure cookie-consent-standalone.js is in same folder</li>
+    </ul>
+  </div>
+  
+  <div class="debug">
+    <h2>Current Status</h2>
+    <p>Cookie: <code id="cookieStatus">Checking...</code></p>
+    <p>Preferences: <code id="prefStatus">Checking...</code></p>
+  </div>
+  
+  <script>
+    // Check current status
+    function updateStatus() {
+      const cookie = document.cookie.match(/cc_cookie=([^;]+)/);
+      document.getElementById('cookieStatus').textContent = cookie ? 'Found' : 'Not found';
+      
+      if (typeof CookieConsent !== 'undefined') {
+        const prefs = CookieConsent.getPreferences();
+        document.getElementById('prefStatus').textContent = prefs ? 'Set' : 'Not set';
+      } else {
+        document.getElementById('prefStatus').textContent = 'CookieConsent not loaded';
+      }
+    }
+    updateStatus();
+    setInterval(updateStatus, 1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Gating Demo - Cookie Consent</title>
+  
+  <!-- Cookie Consent Script -->
+  <script src="cookie-consent-standalone.js"></script>
+  
+  <script>
+    CookieConsent.init({
+      categories: {
+        necessary: {
+          enabled: true,
+          readOnly: true,
+          name: 'Necessary',
+          description: 'Essential cookies required for the website.'
+        },
+        analytics: {
+          enabled: false,
+          name: 'Analytics',
+          description: 'Website analytics and tracking.'
+        },
+        marketing: {
+          enabled: false,
+          name: 'Marketing',
+          description: 'Personalized advertising.'
+        }
+      }
+    });
+    
+    // Test automatic cookie blocking
+    console.log('Testing automatic cookie blocking...');
+  </script>
+  
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    h1 { color: #333; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+    .demo-section {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .success { color: #10b981; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .warning { color: #f59e0b; font-weight: bold; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <h1>🛡️ Automatic Cookie Gating Demo</h1>
+  
+  <p>This demo shows how the cookie guard <strong>automatically blocks</strong> analytics and marketing cookies 
+  until you give consent, <em>without</em> needing to modify your scripts!</p>
+  
+  <div class="demo-section">
+    <h2>🧪 Test Automatic Blocking</h2>
+    <p>Click the button below to try setting analytics cookies. They will be blocked until you accept.</p>
+    
+    <button onclick="testAnalyticsCookie()">Try Setting Analytics Cookie (_ga)</button>
+    <button onclick="testMarketingCookie()">Try Setting Marketing Cookie (_fbp)</button>
+    <button onclick="testNecessaryCookie()">Try Setting Necessary Cookie (session_id)</button>
+    
+    <p id="result" style="margin-top: 10px;"></p>
+  </div>
+  
+  <div class="demo-section">
+    <h2>📊 How It Works</h2>
+    
+    <h3>Automatic Pattern Detection</h3>
+    <p>The cookie guard intercepts ALL cookie writes and blocks these patterns:</p>
+    
+    <h4>Analytics Cookies (Blocked until consent)</h4>
+    <ul>
+      <li><code>_ga</code>, <code>_gid</code>, <code>_gat_*</code> - Google Analytics</li>
+      <li><code>_gcl_au</code> - Google Click Identifier</li>
+      <li><code>__utm*</code> - Google Analytics UTM tracking</li>
+      <li><code>_uet</code> - Microsoft UET</li>
+    </ul>
+    
+    <h4>Marketing Cookies (Blocked until consent)</h4>
+    <ul>
+      <li><code>_fbp</code> - Facebook Pixel</li>
+      <li><code>fr</code> - Facebook tracking</li>
+      <li><code>hubspotutk</code> - HubSpot tracking</li>
+      <li><code>intercom-*</code> - Intercom chat</li>
+      <li><code>tawk*</code> - Tawk.to live chat</li>
+      <li><code>datadog*</code> - Datadog analytics</li>
+    </ul>
+    
+    <h3>Your Scripts Don't Need Changes!</h3>
+    <p>You can use your existing analytics/marketing code. The guard automatically blocks cookies based on patterns.</p>
+  </div>
+  
+  <div class="demo-section">
+    <h2>🔍 Console Output</h2>
+    <p>Open your browser console (F12) to see blocking messages:</p>
+    <pre style="background: #1a1a1a; color: #0f0; padding: 15px; border-radius: 6px; overflow-x: auto;">Cookie guard installed
+Cookie blocked until consent: _ga
+Cookie blocked: _fbp</pre>
+  </div>
+  
+  <div class="demo-section">
+    <h2>📝 Example: Real Google Analytics</h2>
+    <p>Even if you include Google Analytics normally, its cookies will be blocked:</p>
+    <pre style="background: #f3f4f6; padding: 15px; border-radius: 6px; overflow-x: auto;">&lt;!-- This will work, but cookies won't be set until consent --&gt;
+&lt;script&gt;
+  gtag('config', 'UA-XXXXXXXXX-X');
+  // _ga cookie attempts will be blocked!
+&lt;/script&gt;
+
+&lt;!-- Or with data-category (recommended) --&gt;
+&lt;script type="text/plain" data-category="analytics"&gt;
+  gtag('config', 'UA-XXXXXXXXX-X');
+  // Only loads after consent
+&lt;/script&gt;</pre>
+  </div>
+  
+  <div class="demo-section">
+    <h2>✅ Manual Controls</h2>
+    <p>Test the consent system:</p>
+    <button onclick="CookieConsent.showPreferences()">Show Preferences</button>
+    <button onclick="CookieConsent.show()">Show Banner</button>
+    <button onclick="CookieConsent.reset()">Reset Everything</button>
+    <button onclick="showCookieStatus()">Check Cookies</button>
+  </div>
+  
+  <div class="demo-section">
+    <h2>🎯 Key Benefits</h2>
+    <ul>
+      <li><strong>Zero Code Changes:</strong> Your existing scripts work as-is</li>
+      <li><strong>Automatic Protection:</strong> Cookies blocked by pattern matching</li>
+      <li><strong>GDPR Compliant:</strong> No cookies set before consent</li>
+      <li><strong>Developer Friendly:</strong> Check console to see what's blocked</li>
+    </ul>
+  </div>
+  
+  <script>
+    function testAnalyticsCookie() {
+      document.cookie = '_ga=test123; path=/; max-age=3600';
+      checkCookie('_ga');
+    }
+    
+    function testMarketingCookie() {
+      document.cookie = '_fbp=test456; path=/; max-age=3600';
+      checkCookie('_fbp');
+    }
+    
+    function testNecessaryCookie() {
+      document.cookie = 'session_id=test789; path=/; max-age=3600';
+      checkCookie('session_id');
+    }
+    
+    function checkCookie(name) {
+      const exists = document.cookie.includes(name + '=');
+      const resultEl = document.getElementById('result');
+      
+      if (name.startsWith('_ga') || name.startsWith('_fbp')) {
+        if (exists) {
+          resultEl.innerHTML = `<span class="error">❌ ${name} cookie WAS set (consent needed or bug!)</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="success">✅ ${name} cookie blocked (as expected)</span>`;
+        }
+      } else {
+        if (exists) {
+          resultEl.innerHTML = `<span class="success">✅ ${name} cookie set successfully (necessary cookies allowed)</span>`;
+        } else {
+          resultEl.innerHTML = `<span class="error">❌ ${name} cookie NOT set (unexpected)</span>`;
+        }
+      }
+    }
+    
+    function showCookieStatus() {
+      const cookies = document.cookie;
+      alert('Current cookies:\n\n' + (cookies || '(no cookies set)'));
+      console.log('All cookies:', cookies);
+    }
+    
+    // Test on load
+    setTimeout(() => {
+      console.log('Cookie guard installed. Try setting cookies to see blocking in action!');
+    }, 100);
+  </script>
+</body>
+</html>
