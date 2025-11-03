@@ -437,7 +437,7 @@
       .cc-theme-dark .cc-category__desc { color: #999; }
       
       .cc-toggle { position: relative; display: inline-block; width: 50px; height: 28px; cursor: pointer; }
-      .cc-toggle input { position: absolute; opacity: 0; width: 50px; height: 28px; margin: 0; padding: 0; cursor: pointer; z-index: 2; }
+      .cc-toggle input { position: absolute; opacity: 0; width: 50px; height: 28px; margin: 0; padding: 0; cursor: pointer; z-index: 10; pointer-events: auto; top: 0; left: 0; }
       .cc-toggle__slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 28px; pointer-events: none; z-index: 1; }
       .cc-toggle__slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: 0.3s; border-radius: 50%; }
       .cc-toggle input:checked + .cc-toggle__slider { background-color: #2563eb; }
@@ -661,35 +661,24 @@
       });
     });
     
-    // Event listeners for toggle switches - make sure clicks work
-    modal.querySelectorAll('label.cc-toggle').forEach(label => {
-      const checkbox = label.querySelector('input[type="checkbox"]');
-      if (!checkbox) return;
+    // Event listeners for toggle switches - use native label behavior
+    modal.querySelectorAll('input[type="checkbox"][data-category]').forEach(checkbox => {
+      // Ensure checkbox is directly clickable
+      checkbox.style.pointerEvents = 'auto';
+      checkbox.style.cursor = checkbox.disabled ? 'not-allowed' : 'pointer';
       
-      // Make the entire label clickable
-      label.addEventListener('click', function(e) {
-        if (checkbox.disabled) {
-          e.preventDefault();
-          e.stopPropagation();
-          return;
-        }
-        
-        // Toggle the checkbox
-        checkbox.checked = !checkbox.checked;
-        
-        // Trigger change event manually
-        const event = new Event('change', { bubbles: true });
-        checkbox.dispatchEvent(event);
-        
-        console.log('Toggle clicked:', checkbox.getAttribute('data-category'), checkbox.checked);
-        e.preventDefault();
+      // Handle change event
+      checkbox.addEventListener('change', function(e) {
+        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
         e.stopPropagation();
       });
       
-      // Also handle direct checkbox change
-      checkbox.addEventListener('change', function(e) {
-        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
-      });
+      // Make label work natively - don't interfere
+      const label = checkbox.closest('label.cc-toggle');
+      if (label && !checkbox.disabled) {
+        label.style.cursor = 'pointer';
+        // Let native label behavior work - no custom handler needed
+      }
     });
     
     // Close on overlay click
