@@ -153,15 +153,29 @@ class CookieConsent_Plugin {
                     }
                     
                     if (isBlocked) {
-                        // Delete with ALL possible combinations
-                        var paths = ['/', '/index.html'];
-                        var domains = [domain, '.' + domain, parentDomain];
+                        // Delete with ALL possible combinations - cookies can have various domain/path settings
+                        var paths = ['/', '/index.html', ''];
+                        var domains = [domain, '.' + domain, parentDomain, ''];
                         
+                        // Try deleting with each combination
                         for (var p = 0; p < paths.length; p++) {
                             for (var d = 0; d < domains.length; d++) {
-                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p] + ';domain=' + domains[d];
-                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p];
+                                if (domains[d]) {
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p] + ';domain=' + domains[d];
+                                } else {
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p];
+                                }
                             }
+                        }
+                        
+                        // Also try without specifying domain (for exact domain match)
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + domain;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + domain;
+                        
+                        // Try with parent domain
+                        if (domainParts.length > 1) {
+                            document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + parentDomain;
                         }
                     }
                 }
@@ -244,9 +258,17 @@ class CookieConsent_Plugin {
                                 // DO NOT SET THE COOKIE - Block it completely
                                 // Also delete it immediately in case it was set before guard
                                 setTimeout(function() {
+                                    var hostname = window.location.hostname;
+                                    var domainParts = hostname.split('.');
+                                    var parentDomain = domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname;
+                                    
+                                    // Delete with all combinations
                                     document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
-                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + window.location.hostname;
-                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + window.location.hostname;
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + hostname;
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + hostname;
+                                    if (domainParts.length > 1) {
+                                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + parentDomain;
+                                    }
                                 }, 0);
                                 return;
                             }
