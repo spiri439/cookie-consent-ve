@@ -27,7 +27,7 @@ class CookieConsent_Plugin {
         add_action('init', array($this, 'init'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'register_settings'));
-        add_action('wp_head', array($this, 'output_cookie_guard_early'), 1); // Priority 1 = VERY early
+        add_action('wp_head', array($this, 'output_cookie_guard_early'), 0); // Priority 0 = EARLIEST possible
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_action('wp_footer', array($this, 'output_config'));
         add_shortcode('cc_settings', array($this, 'shortcode_settings_link'));
@@ -222,7 +222,13 @@ class CookieConsent_Plugin {
                         // If no preferences yet, block ALL analytics/marketing cookies
                         if (!STATE.preferences || !STATE.preferences.categories) {
                             if (isAnalytics || isMarketing) {
-                                // DO NOT SET THE COOKIE
+                                // DO NOT SET THE COOKIE - Block it completely
+                                // Also delete it immediately in case it was set before guard
+                                setTimeout(function() {
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + window.location.hostname;
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + window.location.hostname;
+                                }, 0);
                                 return;
                             }
                             nativeCookieSetter(value);
@@ -238,7 +244,13 @@ class CookieConsent_Plugin {
                         
                         if ((isAnalytics && !acceptedSet['analytics']) || 
                             (isMarketing && !acceptedSet['marketing'])) {
-                            // DO NOT SET THE COOKIE
+                            // DO NOT SET THE COOKIE - Block it completely
+                            // Also delete it immediately in case it was set before guard
+                            setTimeout(function() {
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + window.location.hostname;
+                                document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + window.location.hostname;
+                            }, 0);
                             return;
                         }
                         
