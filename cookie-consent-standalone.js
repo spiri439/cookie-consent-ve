@@ -322,7 +322,13 @@
       
       // Delete blocked cookies immediately and then set up periodic deletion
       deleteBlockedCookies();
-      setInterval(deleteBlockedCookies, 1000); // Delete every second to catch any that slip through
+      // Delete more aggressively - every 500ms
+      setInterval(deleteBlockedCookies, 500);
+      // Also try immediate deletion on page visibility change
+      if (document.addEventListener) {
+        document.addEventListener('visibilitychange', deleteBlockedCookies);
+        window.addEventListener('focus', deleteBlockedCookies);
+      }
       
       // Intercept document.cookie setter to block analytics/marketing cookies
       const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie') || 
