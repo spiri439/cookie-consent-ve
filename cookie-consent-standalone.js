@@ -409,6 +409,16 @@
       try {
         function deleteBlockedCookies() {
           if (!document.cookie) return;
+          
+          // Check preferences first - only delete if NOT accepted
+          const accepted = STATE.preferences && STATE.preferences.categories ? 
+                          new Set(STATE.preferences.categories) : new Set();
+          const analyticsAccepted = accepted.has('analytics');
+          const marketingAccepted = accepted.has('marketing');
+          
+          // If both accepted, skip deletion
+          if (analyticsAccepted && marketingAccepted) return;
+          
           const cookies = document.cookie.split('; ');
           const consentCookieName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
           const analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/];
@@ -417,9 +427,15 @@
           cookies.forEach(cookieStr => {
             const cookieName = cookieStr.split('=')[0].trim();
             if (cookieName === consentCookieName) return;
-            const isBlocked = analyticsPatterns.some(p => p.test(cookieName)) || 
-                            marketingPatterns.some(p => p.test(cookieName));
-            if (isBlocked) {
+            
+            const isAnalytics = analyticsPatterns.some(p => p.test(cookieName));
+            const isMarketing = marketingPatterns.some(p => p.test(cookieName));
+            
+            // Only delete if category is NOT accepted
+            const shouldDelete = (isAnalytics && !analyticsAccepted) || 
+                                (isMarketing && !marketingAccepted);
+            
+            if (shouldDelete) {
               document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
               document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${window.location.hostname}`;
             }
