@@ -128,9 +128,12 @@ class CookieConsent_Plugin {
                 var cookies = document.cookie.split('; ');
                 var analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/, /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/, /^_gat_/, /^_gcl/, /^_uetsid/, /^_uetvid/];
                 var marketingPatterns = [/^_fbp/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/, /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/, /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/, /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/, /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/];
-                var domain = window.location.hostname;
-                var domainParts = domain.split('.');
-                var parentDomain = domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : domain;
+                var hostname = window.location.hostname;
+                var domainParts = hostname.split('.');
+                var rootDomain = domainParts.length > 1 ? domainParts.slice(-2).join('.') : hostname;
+                var domain = hostname;
+                var dotDomain = '.' + rootDomain;
+                var parentDomain = domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname;
                 
                 for (var i = 0; i < cookies.length; i++) {
                     var cookieName = cookies[i].split('=')[0].trim();
@@ -154,26 +157,33 @@ class CookieConsent_Plugin {
                     
                     if (isBlocked) {
                         // Delete with ALL possible combinations - cookies can have various domain/path settings
+                        // CRITICAL: Cookies with .domain format need exact domain match to delete
                         var paths = ['/', '/index.html', ''];
-                        var domains = [domain, '.' + domain, parentDomain, ''];
+                        var domainsToTry = [domain, dotDomain, parentDomain, rootDomain, ''];
                         
                         // Try deleting with each combination
                         for (var p = 0; p < paths.length; p++) {
-                            for (var d = 0; d < domains.length; d++) {
-                                if (domains[d]) {
-                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p] + ';domain=' + domains[d];
+                            for (var d = 0; d < domainsToTry.length; d++) {
+                                var dom = domainsToTry[d];
+                                var path = paths[p] || '/';
+                                
+                                if (dom) {
+                                    // Try with domain specified
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + path + ';domain=' + dom;
                                 } else {
-                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + paths[p];
+                                    // Try without domain (for exact domain match cookies)
+                                    document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=' + path;
                                 }
                             }
                         }
                         
-                        // Also try without specifying domain (for exact domain match)
+                        // Extra attempts with most common combinations
                         document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
-                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + domain;
-                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + domain;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + hostname;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + hostname;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + dotDomain;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + rootDomain;
                         
-                        // Try with parent domain
                         if (domainParts.length > 1) {
                             document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + parentDomain;
                         }
