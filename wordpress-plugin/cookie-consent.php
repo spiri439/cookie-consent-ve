@@ -122,6 +122,44 @@ class CookieConsent_Plugin {
         ?>
         <script>
         (function(){
+            // FIRST: Delete any existing analytics/marketing cookies immediately
+            function deleteBlockedCookies() {
+                if (!document.cookie) return;
+                var cookies = document.cookie.split('; ');
+                var analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/, /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/];
+                var marketingPatterns = [/^_fbp/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/, /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/, /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/, /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/, /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/];
+                var domain = window.location.hostname;
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookieName = cookies[i].split('=')[0].trim();
+                    if (cookieName === 'cc_cookie') continue;
+                    var isBlocked = false;
+                    for (var j = 0; j < analyticsPatterns.length; j++) {
+                        if (analyticsPatterns[j].test(cookieName)) {
+                            isBlocked = true;
+                            break;
+                        }
+                    }
+                    if (!isBlocked) {
+                        for (var k = 0; k < marketingPatterns.length; k++) {
+                            if (marketingPatterns[k].test(cookieName)) {
+                                isBlocked = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isBlocked) {
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=' + domain;
+                        document.cookie = cookieName + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.' + domain;
+                    }
+                }
+            }
+            
+            // Delete immediately
+            deleteBlockedCookies();
+            // Delete aggressively every 100ms
+            setInterval(deleteBlockedCookies, 100);
+            
             // Install cookie guard IMMEDIATELY - before any other scripts can run
             if (typeof document === 'undefined' || typeof Object === 'undefined' || typeof Object.defineProperty === 'undefined') return;
             
