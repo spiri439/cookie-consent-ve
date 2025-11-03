@@ -705,7 +705,9 @@
   // ============================================================================
 
   function acceptAll() {
+    console.log('acceptAll() called');
     const categories = Object.keys(STATE.config.categories);
+    console.log('Accepting categories:', categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
     initializeScripts();
