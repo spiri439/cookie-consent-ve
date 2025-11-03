@@ -936,8 +936,8 @@
         document.documentElement.classList.add('cc-theme-dark');
       }
       
-      // Install guards immediately - before any other scripts run
-      installCookieGuard();
+      // Cookie guard already installed when script loaded
+      // Just install script interceptor
       installScriptInterceptor();
       
       // Load existing preferences

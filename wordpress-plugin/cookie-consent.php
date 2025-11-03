@@ -115,13 +115,14 @@ class CookieConsent_Plugin {
     }
     
     public function enqueue_scripts() {
-        // Load script in footer to ensure DOM is ready
+        // Load script in HEAD with high priority to block cookies before other scripts
+        // Priority 1 ensures it loads before most other scripts
         wp_enqueue_script(
             'cookie-consent',
             CC_PLUGIN_URL . 'cookie-consent.js',
             array(),
             CC_VERSION,
-            true // Load in footer
+            false // Load in HEAD, not footer - critical for cookie blocking
         );
     }
     
