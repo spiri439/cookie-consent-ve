@@ -193,8 +193,8 @@ class CookieConsent_Plugin {
             
             // Delete immediately and continuously
             deleteBlockedCookies();
-            // Delete VERY aggressively every 50ms
-            setInterval(deleteBlockedCookies, 50);
+            // Delete VERY aggressively every 25ms for .domain format cookies
+            setInterval(deleteBlockedCookies, 25);
             // Also delete on any DOM events
             if (document.addEventListener) {
                 document.addEventListener('DOMContentLoaded', deleteBlockedCookies);
