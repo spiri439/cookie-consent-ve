@@ -31,6 +31,7 @@ class CookieConsent_Plugin {
         add_action('wp_footer', array($this, 'output_config'));
         add_shortcode('cc_settings', array($this, 'shortcode_settings_link'));
         add_action('init', array($this, 'register_blocks'));
+        add_action('widgets_init', array($this, 'register_widget'));
         
         // Load settings
         $this->settings = get_option('cc_settings', $this->get_default_settings());
@@ -221,6 +222,11 @@ class CookieConsent_Plugin {
             return '<a href="#" class="cc-settings-link" onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); }">' . 
                    esc_html($text) . '</a>';
         }
+    }
+    
+    // Register WordPress Widget
+    public function register_widget() {
+        register_widget('Cookie_Consent_Widget');
     }
     
     public function render_admin_page() {
