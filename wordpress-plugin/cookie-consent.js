@@ -290,37 +290,53 @@
           // Extract cookie name from "name=value; attributes..."
           const cookieName = String(value).split('=')[0].trim();
           
-          // If no preferences yet, check if this looks like analytics/marketing
+          // Always allow our own consent cookie
+          if (cookieName === STATE.config.cookieName) {
+            nativeCookieSetter(value);
+            return;
+          }
+          
+          // Comprehensive patterns for analytics cookies
+          const analyticsPatterns = [
+            /^_ga/, /^_gid$/, /^_gat/, /^_gcl_au$/, /^__utm/, /^_uet/, 
+            /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/,
+            /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/
+          ];
+          
+          // Comprehensive patterns for marketing cookies
+          const marketingPatterns = [
+            /^_fbp$/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/,
+            /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/,
+            /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/,
+            /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/,
+            /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/
+          ];
+          
+          const isAnalytics = analyticsPatterns.some(pattern => pattern.test(cookieName));
+          const isMarketing = marketingPatterns.some(pattern => pattern.test(cookieName));
+          
+          // If no preferences yet, block ALL analytics/marketing cookies
           if (!STATE.preferences) {
-            const analyticsPatterns = [/^_ga/, /^_gid$/, /^_gat_/, /^_gcl_au$/, /^__utm/, /^_uet/];
-            const marketingPatterns = [/^_fbp$/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/];
-            
-            const isAnalytics = analyticsPatterns.some(pattern => pattern.test(cookieName));
-            const isMarketing = marketingPatterns.some(pattern => pattern.test(cookieName));
-            
-            // Block analytics/marketing cookies until consent
             if (isAnalytics || isMarketing) {
               console.log('Cookie blocked until consent:', cookieName);
               return; // Don't set the cookie
             }
+            // Allow other cookies (necessary ones) when no preferences
+            nativeCookieSetter(value);
+            return;
           }
           
           // If we have preferences, check them
-          if (STATE.preferences) {
-            const accepted = new Set(STATE.preferences.categories || []);
-            
-            const analyticsPatterns = [/^_ga/, /^_gid$/, /^_gat_/, /^_gcl_au$/, /^__utm/, /^_uet/];
-            const marketingPatterns = [/^_fbp$/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/];
-            
-            const isAnalytics = analyticsPatterns.some(pattern => pattern.test(cookieName));
-            const isMarketing = marketingPatterns.some(pattern => pattern.test(cookieName));
-            
-            if ((isAnalytics && !accepted.has('analytics')) || 
-                (isMarketing && !accepted.has('marketing'))) {
-              console.log('Cookie blocked:', cookieName);
-              return;
-            }
+          const accepted = new Set(STATE.preferences.categories || []);
+          
+          if ((isAnalytics && !accepted.has('analytics')) || 
+              (isMarketing && !accepted.has('marketing'))) {
+            console.log('Cookie blocked (category not accepted):', cookieName);
+            return;
           }
+          
+          // All checks passed, allow the cookie
+          nativeCookieSetter(value);
           
           // Allow the cookie
           nativeCookieSetter(value);
@@ -463,6 +479,47 @@
       .cc-modal__footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end; }
       .cc-theme-dark .cc-modal__footer { border-color: #333; }
       .cc-modal__footer button, .cc-banner__btn { pointer-events: auto !important; z-index: 10 !important; cursor: pointer !important; }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .cc-banner { max-width: calc(100% - 20px); padding: 20px; margin: 10px; }
+        .cc-banner__title { font-size: 16px; }
+        .cc-banner__text { font-size: 13px; margin-bottom: 16px; }
+        .cc-banner__actions { flex-direction: column; }
+        .cc-banner__btn { width: 100%; text-align: center; }
+        .cc-modal { width: 95%; max-width: none; margin: 10px; }
+        .cc-modal__header { padding: 20px; }
+        .cc-modal__title { font-size: 18px; }
+        .cc-modal__body { padding: 20px; }
+        .cc-modal__footer { padding: 16px 20px; flex-direction: column-reverse; }
+        .cc-modal__footer button { width: 100%; }
+        .cc-category { padding: 12px; }
+        .cc-category__header { flex-wrap: wrap; gap: 12px; }
+        .cc-category__title { font-size: 15px; }
+        .cc-category__desc { font-size: 12px; }
+        .cc-position-bottom-right { bottom: 10px; right: 10px; }
+        .cc-position-bottom-left { bottom: 10px; left: 10px; }
+        .cc-position-bottom-center { bottom: 10px; left: 50%; transform: translateX(-50%); width: calc(100% - 20px); max-width: calc(100% - 20px); }
+        .cc-position-top-right { top: 10px; right: 10px; }
+        .cc-position-top-left { top: 10px; left: 10px; }
+        .cc-position-top-center { top: 10px; left: 50%; transform: translateX(-50%); width: calc(100% - 20px); max-width: calc(100% - 20px); }
+      }
+      
+      @media (max-width: 480px) {
+        .cc-banner { padding: 16px; }
+        .cc-banner__title { font-size: 15px; margin-bottom: 10px; }
+        .cc-banner__text { font-size: 12px; margin-bottom: 14px; }
+        .cc-banner__btn { padding: 10px 16px; font-size: 13px; }
+        .cc-modal__header { padding: 16px; }
+        .cc-modal__title { font-size: 16px; }
+        .cc-modal__body { padding: 16px; }
+        .cc-modal__close { width: 28px; height: 28px; font-size: 20px; }
+        .cc-category { padding: 10px; }
+        .cc-toggle { width: 44px; height: 24px; }
+        .cc-toggle input { width: 44px; height: 24px; }
+        .cc-toggle__slider:before { height: 18px; width: 18px; left: 3px; bottom: 3px; }
+        .cc-toggle input:checked + .cc-toggle__slider:before { transform: translateX(20px); }
+      }
       
       /* Position variants */
       .cc-position-bottom-right { bottom: 20px; right: 20px; }
