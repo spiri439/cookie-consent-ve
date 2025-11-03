@@ -57,6 +57,7 @@
     preferences: null,
     modalShown: false,
     cookieGuardInstalled: false,
+    scriptInterceptorInstalled: false,
     pendingScripts: []
   };
 
@@ -118,6 +119,129 @@
   // ============================================================================
   // SCRIPT & COOKIE MANAGEMENT
   // ============================================================================
+
+  function installScriptInterceptor() {
+    if (STATE.scriptInterceptorInstalled) return;
+    
+    try {
+      // Store original appendChild methods
+      const originalAppendChild = Node.prototype.appendChild;
+      const originalInsertBefore = Node.prototype.insertBefore;
+      
+      // Intercept script insertion
+      Node.prototype.appendChild = function(child) {
+        if (shouldBlockScript(child)) {
+          console.log('Script blocked:', child.src || '(inline)');
+          return child; // Return child without adding to DOM
+        }
+        return originalAppendChild.call(this, child);
+      };
+      
+      Node.prototype.insertBefore = function(newNode, referenceNode) {
+        if (shouldBlockScript(newNode)) {
+          console.log('Script blocked:', newNode.src || '(inline)');
+          return newNode; // Return child without adding to DOM
+        }
+        return originalInsertBefore.call(this, newNode, referenceNode);
+      };
+      
+      STATE.scriptInterceptorInstalled = true;
+      console.log('Script interceptor installed');
+    } catch (e) {
+      console.warn('Script interceptor installation failed:', e);
+    }
+  }
+  
+  function shouldBlockScript(script) {
+    // Only block script elements
+    if (script.tagName !== 'SCRIPT') return false;
+    
+    // Never block our own script or scripts with data-cc-allow attribute
+    if (script.hasAttribute('data-cc-allow') || 
+        script.src && script.src.includes('cookie-consent-standalone.js')) {
+      return false;
+    }
+    
+    // If script has data-category, let the normal flow handle it
+    if (script.hasAttribute('data-category') && script.getAttribute('type') === 'text/plain') {
+      return false;
+    }
+    
+    // Check if we should block based on consent
+    if (!STATE.preferences) {
+      // No consent yet - check if this looks like analytics/marketing
+      return isAnalyticsOrMarketingScript(script);
+    }
+    
+    // We have preferences - check if script should be blocked
+    const accepted = new Set(STATE.preferences.categories || []);
+    const isAnalytics = isAnalyticsScript(script);
+    const isMarketing = isMarketingScript(script);
+    
+    if (isAnalytics && !accepted.has('analytics')) return true;
+    if (isMarketing && !accepted.has('marketing')) return true;
+    
+    return false;
+  }
+  
+  function isAnalyticsOrMarketingScript(script) {
+    return isAnalyticsScript(script) || isMarketingScript(script);
+  }
+  
+  function isAnalyticsScript(script) {
+    const analyticsDomains = [
+      'google-analytics.com',
+      'googletagmanager.com',
+      'googleapis.com/analytics',
+      'analytics.google.com',
+      'analytics.js',
+      'gtag.js',
+      'ga.js'
+    ];
+    
+    if (script.src) {
+      return analyticsDomains.some(domain => script.src.includes(domain));
+    }
+    
+    // Check inline content for analytics code
+    if (script.textContent) {
+      const content = script.textContent.toLowerCase();
+      return content.includes('gtag(') || 
+             content.includes('google-analytics') ||
+             content.includes('analytics.js') ||
+             content.includes('ga(');
+    }
+    
+    return false;
+  }
+  
+  function isMarketingScript(script) {
+    const marketingDomains = [
+      'facebook.com/tr',
+      'facebook.net/connect',
+      'facebook.com/connect',
+      'facebook.net/js/sdk',
+      'connect.facebook.net',
+      'pixel.facebook.com',
+      'fbevents.js',
+      'facebook-analytics'
+    ];
+    
+    if (script.src) {
+      return marketingDomains.some(domain => script.src.includes(domain));
+    }
+    
+    // Check inline content for marketing code
+    if (script.textContent) {
+      const content = script.textContent.toLowerCase();
+      return content.includes('fbq(') || 
+             content.includes('facebook pixel') ||
+             content.includes('_fbp') ||
+             content.includes('fbevents.js');
+    }
+    
+    return false;
+  }
 
   function installCookieGuard() {
     if (STATE.cookieGuardInstalled) return;
@@ -517,8 +641,9 @@
         document.documentElement.classList.add('cc-theme-dark');
       }
       
-      // Install cookie guard immediately - before any other scripts run
+      // Install guards immediately - before any other scripts run
       installCookieGuard();
+      installScriptInterceptor();
       
       // Load existing preferences
       STATE.preferences = loadPreferences();

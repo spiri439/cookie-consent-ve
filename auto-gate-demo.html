@@ -74,11 +74,17 @@
   
   <div class="demo-section">
     <h2>🧪 Test Automatic Blocking</h2>
-    <p>Click the button below to try setting analytics cookies. They will be blocked until you accept.</p>
+    <p>Click the buttons below to test automatic blocking of cookies and scripts.</p>
     
+    <h3>Cookie Blocking:</h3>
     <button onclick="testAnalyticsCookie()">Try Setting Analytics Cookie (_ga)</button>
     <button onclick="testMarketingCookie()">Try Setting Marketing Cookie (_fbp)</button>
     <button onclick="testNecessaryCookie()">Try Setting Necessary Cookie (session_id)</button>
+    
+    <h3>Script Blocking:</h3>
+    <button onclick="testAnalyticsScript()">Try Loading Analytics Script</button>
+    <button onclick="testMarketingScript()">Try Loading Marketing Script</button>
+    <button onclick="testNecessaryScript()">Try Loading Necessary Script</button>
     
     <p id="result" style="margin-top: 10px;"></p>
   </div>
@@ -189,6 +195,55 @@ Cookie blocked: _fbp</pre>
       }
     }
     
+    function testAnalyticsScript() {
+      const script = document.createElement('script');
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=TEST_ID';
+      script.onload = () => {
+        const resultEl = document.getElementById('result');
+        resultEl.innerHTML = '<span class="error">❌ Analytics script LOADED (should be blocked!)</span>';
+      };
+      document.head.appendChild(script);
+      setTimeout(() => {
+        const scriptLoaded = document.querySelector('script[src*="googletagmanager"]');
+        const resultEl = document.getElementById('result');
+        if (!scriptLoaded || !document.body.querySelector('script[src*="googletagmanager"]')) {
+          resultEl.innerHTML = '<span class="success">✅ Analytics script blocked (as expected)</span>';
+        }
+      }, 500);
+    }
+    
+    function testMarketingScript() {
+      const script = document.createElement('script');
+      script.textContent = 'fbq("track", "PageView");';
+      document.head.appendChild(script);
+      setTimeout(() => {
+        const scripts = Array.from(document.head.querySelectorAll('script'));
+        const hasFbq = scripts.some(s => s.textContent.includes('fbq('));
+        const resultEl = document.getElementById('result');
+        if (!hasFbq) {
+          resultEl.innerHTML = '<span class="success">✅ Marketing script blocked (as expected)</span>';
+        } else {
+          resultEl.innerHTML = '<span class="error">❌ Marketing script LOADED (should be blocked!)</span>';
+        }
+      }, 100);
+    }
+    
+    function testNecessaryScript() {
+      const script = document.createElement('script');
+      script.textContent = 'console.log("Necessary script loaded");';
+      document.head.appendChild(script);
+      setTimeout(() => {
+        const scripts = Array.from(document.head.querySelectorAll('script'));
+        const hasTest = scripts.some(s => s.textContent.includes('Necessary script loaded'));
+        const resultEl = document.getElementById('result');
+        if (hasTest) {
+          resultEl.innerHTML = '<span class="success">✅ Necessary script loaded successfully</span>';
+        } else {
+          resultEl.innerHTML = '<span class="error">❌ Necessary script blocked (unexpected)</span>';
+        }
+      }, 100);
+    }
+    
     function showCookieStatus() {
       const cookies = document.cookie;
       alert('Current cookies:\n\n' + (cookies || '(no cookies set)'));
@@ -197,7 +252,7 @@ Cookie blocked: _fbp</pre>
     
     // Test on load
     setTimeout(() => {
-      console.log('Cookie guard installed. Try setting cookies to see blocking in action!');
+      console.log('Cookie guard installed. Try setting cookies/scripts to see blocking in action!');
     }, 100);
   </script>
 </body>

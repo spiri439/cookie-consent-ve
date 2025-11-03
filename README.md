@@ -50,13 +50,14 @@ See `wordpress-plugin/README.md` for details.
 All solutions include:
 
 - ✅ GDPR-compliant cookie management
-- ✅ **Automatic cookie blocking** - No code changes needed!
+- ✅ **Automatic blocking** - Cookies AND scripts blocked automatically!
+- ✅ **Zero code changes** - Works with existing analytics/marketing code
 - ✅ Automatic cookie banner on first visit
 - ✅ Preferences modal with category toggles
-- ✅ Script gating for analytics/marketing code
-- ✅ Auto-clear cookies on preference change
+- ✅ Intelligent script detection (Google Analytics, Facebook Pixel, etc.)
 - ✅ Cookie guard intercepts all cookie writes
-- ✅ Pattern-based blocking (GA, Facebook, etc.)
+- ✅ Pattern-based blocking for cookies and scripts
+- ✅ Auto-clear cookies on preference change
 - ✅ Fully responsive design
 - ✅ Light/Dark themes
 - ✅ Customizable categories
@@ -117,20 +118,40 @@ cookie-consent-ve/
 
 ---
 
-## 🔧 Gating Scripts
+## 🔧 Automatic Blocking
 
-Mark scripts with `type="text/plain"` and `data-category`:
+**No changes needed!** The plugin automatically detects and blocks analytics/marketing.
+
+### Automatic Detection
+
+Works with your existing code:
+
+```html
+<!-- Google Analytics - automatically blocked until consent -->
+<script src="https://www.googletagmanager.com/gtag/js?id=UA-XXXXXXXXX-X"></script>
+<script>
+  gtag('config', 'UA-XXXXXXXXX-X');
+</script>
+
+<!-- Facebook Pixel - automatically blocked until consent -->
+<script>
+  fbq('init', 'PIXEL_ID');
+  fbq('track', 'PageView');
+</script>
+```
+
+### Manual Gating (Optional)
+
+You can also mark scripts explicitly:
 
 ```html
 <!-- Analytics - only loads after consent -->
 <script type="text/plain" data-category="analytics">
-  // Google Analytics
   gtag('config', 'UA-XXXXXXXXX-X');
 </script>
 
 <!-- Marketing - only loads after consent -->
 <script type="text/plain" data-category="marketing">
-  // Facebook Pixel
   fbq('track', 'PageView');
 </script>
 ```
