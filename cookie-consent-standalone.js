@@ -559,8 +559,8 @@
               <div class="cc-category__title">${category.name}</div>
               <div class="cc-category__desc">${category.description}</div>
             </div>
-            <label class="cc-toggle">
-              <input type="checkbox" data-category="${categoryKey}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+            <label class="cc-toggle" ${isDisabled ? 'style="cursor: not-allowed;"' : 'style="cursor: pointer;"'}>
+              <input type="checkbox" data-category="${categoryKey}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''} id="cc-toggle-${categoryKey}">
               <span class="cc-toggle__slider"></span>
             </label>
           </div>
@@ -601,18 +601,34 @@
     });
     
     // Event listeners for toggle switches - make sure clicks work
-    modal.querySelectorAll('input[type="checkbox"][data-category]').forEach(checkbox => {
-      // Handle change event
-      checkbox.addEventListener('change', function(e) {
+    modal.querySelectorAll('label.cc-toggle').forEach(label => {
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      if (!checkbox) return;
+      
+      // Make the entire label clickable
+      label.addEventListener('click', function(e) {
+        if (checkbox.disabled) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
+        }
+        
+        // Toggle the checkbox
+        checkbox.checked = !checkbox.checked;
+        
+        // Trigger change event manually
+        const event = new Event('change', { bubbles: true });
+        checkbox.dispatchEvent(event);
+        
+        console.log('Toggle clicked:', checkbox.getAttribute('data-category'), checkbox.checked);
+        e.preventDefault();
         e.stopPropagation();
-        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
       });
       
-      // Ensure checkbox is clickable
-      if (!checkbox.disabled) {
-        checkbox.style.cursor = 'pointer';
-        checkbox.setAttribute('tabindex', '0');
-      }
+      // Also handle direct checkbox change
+      checkbox.addEventListener('change', function(e) {
+        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
+      });
     });
     
     // Close on overlay click
