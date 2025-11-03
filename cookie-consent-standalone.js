@@ -702,10 +702,25 @@
       return;
     }
     
+    const selectedCategories = [];
+    
+    // Always include readOnly categories (like Necessary)
+    for (const categoryKey of Object.keys(STATE.config.categories)) {
+      const category = STATE.config.categories[categoryKey];
+      if (category.readOnly) {
+        selectedCategories.push(categoryKey);
+      }
+    }
+    
+    // Add checked non-readOnly categories
     const checkboxes = modalBody.querySelectorAll('input[type="checkbox"][data-category]');
-    const selectedCategories = Array.from(checkboxes)
-      .filter(cb => cb.checked && !cb.disabled)
-      .map(cb => cb.getAttribute('data-category'));
+    Array.from(checkboxes).forEach(checkbox => {
+      const categoryKey = checkbox.getAttribute('data-category');
+      const category = STATE.config.categories[categoryKey];
+      if (!category.readOnly && checkbox.checked) {
+        selectedCategories.push(categoryKey);
+      }
+    });
     
     console.log('Saving preferences:', selectedCategories);
     
