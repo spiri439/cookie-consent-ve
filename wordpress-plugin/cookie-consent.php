@@ -371,5 +371,76 @@ class CookieConsent_Plugin {
     }
 }
 
+// WordPress Widget Class
+class Cookie_Consent_Widget extends WP_Widget {
+    
+    public function __construct() {
+        parent::__construct(
+            'cookie_consent_widget',
+            __('Cookie Settings', 'cookie-consent'),
+            array(
+                'description' => __('Display a link or button to open cookie preferences', 'cookie-consent')
+            )
+        );
+    }
+    
+    public function widget($args, $instance) {
+        $title = !empty($instance['title']) ? $instance['title'] : '';
+        $text = !empty($instance['text']) ? $instance['text'] : 'Cookie Settings';
+        $is_button = !empty($instance['is_button']) ? $instance['is_button'] : false;
+        
+        echo $args['before_widget'];
+        
+        if (!empty($title)) {
+            echo $args['before_title'] . esc_html($title) . $args['after_title'];
+        }
+        
+        if ($is_button) {
+            echo '<button type="button" class="cc-settings-link cc-settings-button" onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); } else { alert(\'Cookie Consent not loaded\'); }">' . 
+                 esc_html($text) . '</button>';
+        } else {
+            echo '<a href="#" class="cc-settings-link" onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); } else { alert(\'Cookie Consent not loaded\'); }">' . 
+                 esc_html($text) . '</a>';
+        }
+        
+        echo $args['after_widget'];
+    }
+    
+    public function form($instance) {
+        $title = !empty($instance['title']) ? $instance['title'] : '';
+        $text = !empty($instance['text']) ? $instance['text'] : 'Cookie Settings';
+        $is_button = !empty($instance['is_button']) ? $instance['is_button'] : false;
+        ?>
+        <p>
+            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e('Title:', 'cookie-consent'); ?></label>
+            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" 
+                   name="<?php echo esc_attr($this->get_field_name('title')); ?>" 
+                   type="text" value="<?php echo esc_attr($title); ?>">
+        </p>
+        <p>
+            <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php _e('Link/Button Text:', 'cookie-consent'); ?></label>
+            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" 
+                   name="<?php echo esc_attr($this->get_field_name('text')); ?>" 
+                   type="text" value="<?php echo esc_attr($text); ?>">
+        </p>
+        <p>
+            <input class="checkbox" type="checkbox" 
+                   id="<?php echo esc_attr($this->get_field_id('is_button')); ?>" 
+                   name="<?php echo esc_attr($this->get_field_name('is_button')); ?>" 
+                   value="1" <?php checked($is_button, 1); ?>>
+            <label for="<?php echo esc_attr($this->get_field_id('is_button')); ?>"><?php _e('Display as button instead of link', 'cookie-consent'); ?></label>
+        </p>
+        <?php
+    }
+    
+    public function update($new_instance, $old_instance) {
+        $instance = array();
+        $instance['title'] = (!empty($new_instance['title'])) ? sanitize_text_field($new_instance['title']) : '';
+        $instance['text'] = (!empty($new_instance['text'])) ? sanitize_text_field($new_instance['text']) : 'Cookie Settings';
+        $instance['is_button'] = (!empty($new_instance['is_button'])) ? 1 : 0;
+        return $instance;
+    }
+}
+
 // Initialize plugin
 new CookieConsent_Plugin();
