@@ -337,9 +337,6 @@
           
           // All checks passed, allow the cookie
           nativeCookieSetter(value);
-          
-          // Allow the cookie
-          nativeCookieSetter(value);
         }
       });
       
