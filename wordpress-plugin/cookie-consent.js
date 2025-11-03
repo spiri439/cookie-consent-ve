@@ -140,7 +140,6 @@
         }
         
         if (shouldBlockScript(child)) {
-          console.log('Script blocked:', child.src || '(inline)');
           // Clear script content to prevent any execution
           if (child.textContent) {
             child.textContent = '';
@@ -160,7 +159,6 @@
         }
         
         if (shouldBlockScript(newNode)) {
-          console.log('Script blocked:', newNode.src || '(inline)');
           // Clear script content to prevent any execution
           if (newNode.textContent) {
             newNode.textContent = '';
@@ -174,9 +172,8 @@
       };
       
       STATE.scriptInterceptorInstalled = true;
-      console.log('Script interceptor installed');
     } catch (e) {
-      console.warn('Script interceptor installation failed:', e);
+      // Silent failure
     }
   }
   
@@ -425,7 +422,7 @@
         deleteBlockedCookies();
         setInterval(deleteBlockedCookies, 500);
       } catch (e2) {}
-      console.warn('Cookie guard installation failed:', e);
+      // Silent failure - no console spam
     }
   }
 
@@ -664,27 +661,22 @@
       
       // Add click listener to new button
       newBtn.addEventListener('click', function(e) {
-        console.log('Banner button clicked:', this.getAttribute('data-cc-action'));
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         
         const action = this.getAttribute('data-cc-action');
-        console.log('Action:', action);
         
         try {
           if (action === 'accept') {
-            console.log('Calling acceptAll()');
             acceptAll();
           } else if (action === 'reject') {
-            console.log('Calling rejectAll()');
             rejectAll();
           } else if (action === 'settings') {
-            console.log('Calling showModal()');
             showModal();
           }
         } catch (error) {
-          console.error('Error handling button click:', error);
+          // Silent error handling
         }
         
         return false;
@@ -692,7 +684,6 @@
       
       // Also add mouseup as backup
       newBtn.addEventListener('mouseup', function(e) {
-        console.log('Button mouseup:', this.getAttribute('data-cc-action'));
         const action = this.getAttribute('data-cc-action');
         if (action === 'accept') acceptAll();
         else if (action === 'reject') rejectAll();
@@ -783,24 +774,20 @@
       btn.parentNode.replaceChild(newBtn, btn);
       
       newBtn.addEventListener('click', function(e) {
-        console.log('Modal button clicked:', this.getAttribute('data-cc-action'));
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         
         const action = this.getAttribute('data-cc-action');
-        console.log('Modal action:', action);
         
         try {
           if (action === 'close' || action === 'cancel') {
-            console.log('Calling hideModal()');
             hideModal();
           } else if (action === 'save') {
-            console.log('Calling saveFromModal()');
             saveFromModal();
           }
         } catch (error) {
-          console.error('Error handling modal button click:', error);
+          // Silent error handling
         }
         
         return false;
@@ -822,7 +809,6 @@
       
       // Handle change event
       checkbox.addEventListener('change', function(e) {
-        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
         e.stopPropagation();
       });
       
@@ -847,20 +833,16 @@
   // ============================================================================
 
   function acceptAll() {
-    console.log('acceptAll() called');
     const categories = Object.keys(STATE.config.categories);
-    console.log('Accepting categories:', categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
     initializeScripts();
   }
 
   function rejectAll() {
-    console.log('rejectAll() called');
     const categories = Object.keys(STATE.config.categories).filter(cat => 
       STATE.config.categories[cat].readOnly
     );
-    console.log('Rejecting, keeping only:', categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
     if (STATE.config.reloadOnChange) {
@@ -869,26 +851,19 @@
   }
 
   function showModal() {
-    console.log('showModal() called');
     if (!document.body) {
-      console.error('Document body not ready');
       return;
     }
     if (STATE.modalElement) {
-      console.log('Showing existing modal');
       STATE.modalElement.classList.add('show');
       STATE.modalShown = true;
     } else {
-      console.log('Creating new modal');
       STATE.modalElement = createModal();
       if (STATE.modalElement) {
         setTimeout(() => {
           STATE.modalElement.classList.add('show');
           STATE.modalShown = true;
-          console.log('Modal shown');
         }, 10);
-      } else {
-        console.error('Failed to create modal');
       }
     }
   }
@@ -934,8 +909,6 @@
         selectedCategories.push(categoryKey);
       }
     });
-    
-    console.log('Saving preferences:', selectedCategories);
     
     savePreferences({ categories: selectedCategories, timestamp: Date.now() });
     hideModal();
