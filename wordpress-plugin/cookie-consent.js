@@ -494,7 +494,7 @@
       .cc-main > * { pointer-events: auto; }
       
       /* Banner */
-      .cc-banner { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 24px; max-width: 520px; display: block !important; visibility: visible !important; opacity: 1 !important; }
+      .cc-banner { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 24px; max-width: 520px; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed; }
       .cc-theme-dark .cc-banner { background: #1a1a1a; border-color: #333; color: #fff; }
       
       .cc-banner__title { font-size: 18px; font-weight: 600; margin: 0 0 12px; color: #111; }
@@ -559,8 +559,8 @@
       
       /* Responsive Design */
       @media (max-width: 768px) {
-        .cc-main { width: 100%; }
-        .cc-banner { max-width: calc(100% - 20px) !important; padding: 20px !important; margin: 10px !important; width: calc(100% - 20px) !important; }
+        .cc-main { width: 100% !important; z-index: 999999 !important; }
+        .cc-banner { max-width: calc(100% - 20px) !important; padding: 20px !important; margin: 0 !important; width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; }
         .cc-banner__title { font-size: 16px; }
         .cc-banner__text { font-size: 13px; margin-bottom: 16px; }
         .cc-banner__actions { flex-direction: column; }
@@ -584,8 +584,8 @@
       }
       
       @media (max-width: 480px) {
-        .cc-main { width: 100%; }
-        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; }
+        .cc-main { width: 100% !important; z-index: 999999 !important; }
+        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; }
         .cc-banner__title { font-size: 15px; margin-bottom: 10px; }
         .cc-banner__text { font-size: 12px; margin-bottom: 14px; }
         .cc-banner__btn { padding: 10px 16px; font-size: 13px; }
@@ -601,11 +601,12 @@
       }
       
       /* Position variants */
-      .cc-position-bottom-right { bottom: 20px; right: 20px; }
-      .cc-position-bottom-left { bottom: 20px; left: 20px; }
-      .cc-position-bottom-center { bottom: 20px; left: 50%; transform: translateX(-50%); }
-      .cc-position-top-right { top: 20px; right: 20px; }
-      .cc-position-top-left { top: 20px; left: 20px; }
+      .cc-position-bottom-right { bottom: 20px !important; right: 20px !important; left: auto !important; top: auto !important; }
+      .cc-position-bottom-left { bottom: 20px !important; left: 20px !important; right: auto !important; top: auto !important; }
+      .cc-position-bottom-center { bottom: 20px !important; left: 50% !important; right: auto !important; top: auto !important; transform: translateX(-50%) !important; }
+      .cc-position-top-right { top: 20px !important; right: 20px !important; left: auto !important; bottom: auto !important; }
+      .cc-position-top-left { top: 20px !important; left: 20px !important; right: auto !important; bottom: auto !important; }
+      .cc-position-top-center { top: 20px !important; left: 50% !important; right: auto !important; bottom: auto !important; transform: translateX(-50%) !important; }
       
       @media (max-width: 640px) {
         .cc-banner { max-width: calc(100vw - 40px); }

@@ -30,6 +30,7 @@ class CookieConsent_Plugin {
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_action('wp_footer', array($this, 'output_config'));
         add_shortcode('cc_settings', array($this, 'shortcode_settings_link'));
+        add_action('init', array($this, 'register_blocks'));
         
         // Load settings
         $this->settings = get_option('cc_settings', $this->get_default_settings());
@@ -175,11 +176,51 @@ class CookieConsent_Plugin {
     public function shortcode_settings_link($atts) {
         $atts = shortcode_atts(array(
             'text' => 'Cookie Settings',
-            'class' => 'cc-settings-link'
+            'class' => 'cc-settings-link',
+            'button' => 'no'
         ), $atts);
         
-        return '<a href="#" class="' . esc_attr($atts['class']) . '" onclick="event.preventDefault(); CookieConsent.showPreferences();">' . 
-               esc_html($atts['text']) . '</a>';
+        $is_button = ($atts['button'] === 'yes' || $atts['button'] === 'true');
+        $tag = $is_button ? 'button' : 'a';
+        $attr = $is_button ? '' : 'href="#"';
+        $onclick = 'onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); } else { alert(\'Cookie Consent not loaded\'); }"';
+        
+        if ($is_button) {
+            return '<button type="button" class="' . esc_attr($atts['class']) . '" ' . $onclick . '>' . 
+                   esc_html($atts['text']) . '</button>';
+        } else {
+            return '<a ' . $attr . ' class="' . esc_attr($atts['class']) . '" ' . $onclick . '>' . 
+                   esc_html($atts['text']) . '</a>';
+        }
+    }
+    
+    // Register Gutenberg block for cookie settings
+    public function register_blocks() {
+        if (!function_exists('register_block_type')) {
+            return;
+        }
+        
+        register_block_type('cookie-consent/settings-link', array(
+            'editor_script' => 'cookie-consent',
+            'render_callback' => array($this, 'block_settings_link_render'),
+            'attributes' => array(
+                'text' => array('type' => 'string', 'default' => 'Cookie Settings'),
+                'isButton' => array('type' => 'boolean', 'default' => false)
+            )
+        ));
+    }
+    
+    public function block_settings_link_render($atts) {
+        $text = isset($atts['text']) ? $atts['text'] : 'Cookie Settings';
+        $is_button = isset($atts['isButton']) ? $atts['isButton'] : false;
+        
+        if ($is_button) {
+            return '<button type="button" class="cc-settings-link" onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); }">' . 
+                   esc_html($text) . '</button>';
+        } else {
+            return '<a href="#" class="cc-settings-link" onclick="event.preventDefault(); if(typeof CookieConsent !== \'undefined\') { CookieConsent.showPreferences(); }">' . 
+                   esc_html($text) . '</a>';
+        }
     }
     
     public function render_admin_page() {
