@@ -214,18 +214,29 @@ Cookie blocked: _fbp</pre>
     
     function testMarketingScript() {
       const script = document.createElement('script');
-      script.textContent = 'fbq("track", "PageView");';
+      // Use a safe test - wrap in try-catch and use console.log instead of calling fbq
+      script.textContent = 'try { console.log("Marketing script executed"); if (typeof fbq === "function") { fbq("track", "PageView"); } } catch(e) { console.log("Marketing script blocked or fbq not available"); }';
+      
+      const scriptBefore = document.head.querySelectorAll('script').length;
       document.head.appendChild(script);
+      
       setTimeout(() => {
-        const scripts = Array.from(document.head.querySelectorAll('script'));
-        const hasFbq = scripts.some(s => s.textContent.includes('fbq('));
+        const scriptsAfter = document.head.querySelectorAll('script').length;
+        const scriptExists = document.head.contains(script);
+        const hasFbqCode = Array.from(document.head.querySelectorAll('script')).some(s => 
+          s.textContent && s.textContent.includes('Marketing script')
+        );
+        
         const resultEl = document.getElementById('result');
-        if (!hasFbq) {
+        
+        // If script was blocked, it shouldn't be in the DOM
+        // Or if it exists but wasn't executed
+        if (!scriptExists || !hasFbqCode || scriptsAfter === scriptBefore) {
           resultEl.innerHTML = '<span class="success">✅ Marketing script blocked (as expected)</span>';
         } else {
           resultEl.innerHTML = '<span class="error">❌ Marketing script LOADED (should be blocked!)</span>';
         }
-      }, 100);
+      }, 200);
     }
     
     function testNecessaryScript() {

@@ -141,7 +141,14 @@
         
         if (shouldBlockScript(child)) {
           console.log('Script blocked:', child.src || '(inline)');
-          return child; // Return child without adding to DOM
+          // Clear script content to prevent any execution
+          if (child.textContent) {
+            child.textContent = '';
+          }
+          // Return a dummy element instead to prevent any issues
+          const dummy = document.createElement('div');
+          dummy.style.display = 'none';
+          return dummy; // Return dummy instead of script
         }
         return originalAppendChild.call(this, child);
       };
@@ -154,7 +161,14 @@
         
         if (shouldBlockScript(newNode)) {
           console.log('Script blocked:', newNode.src || '(inline)');
-          return newNode; // Return child without adding to DOM
+          // Clear script content to prevent any execution
+          if (newNode.textContent) {
+            newNode.textContent = '';
+          }
+          // Return a dummy element instead
+          const dummy = document.createElement('div');
+          dummy.style.display = 'none';
+          return dummy;
         }
         return originalInsertBefore.call(this, newNode, referenceNode);
       };
