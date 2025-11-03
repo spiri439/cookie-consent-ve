@@ -507,7 +507,8 @@
       }
       
       @media (max-width: 480px) {
-        .cc-banner { padding: 16px; }
+        .cc-main { width: 100%; }
+        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; }
         .cc-banner__title { font-size: 15px; margin-bottom: 10px; }
         .cc-banner__text { font-size: 12px; margin-bottom: 14px; }
         .cc-banner__btn { padding: 10px 16px; font-size: 13px; }
