@@ -275,16 +275,75 @@
     if (STATE.cookieGuardInstalled) return;
     
     try {
+      // First, delete any existing analytics/marketing cookies that shouldn't be there
+      function deleteBlockedCookies() {
+        if (!document.cookie) return;
+        
+        const analyticsPatterns = [
+          /^_ga/, /^_gid$/, /^_gat/, /^_gcl_au$/, /^__utm/, /^_uet/, 
+          /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/,
+          /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/
+        ];
+        
+        const marketingPatterns = [
+          /^_fbp$/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/,
+          /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/,
+          /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/,
+          /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/,
+          /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/
+        ];
+        
+        const allCookies = document.cookie.split('; ');
+        const consentCookieName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
+        
+        allCookies.forEach(cookieStr => {
+          const cookieName = cookieStr.split('=')[0].trim();
+          if (cookieName === consentCookieName) return; // Keep our consent cookie
+          
+          const isAnalytics = analyticsPatterns.some(pattern => pattern.test(cookieName));
+          const isMarketing = marketingPatterns.some(pattern => pattern.test(cookieName));
+          
+          if (isAnalytics || isMarketing) {
+            // Check if we should allow this cookie based on preferences
+            if (STATE.preferences && STATE.preferences.categories) {
+              const accepted = new Set(STATE.preferences.categories || []);
+              if ((isAnalytics && accepted.has('analytics')) || 
+                  (isMarketing && accepted.has('marketing'))) {
+                return; // Keep it if category is accepted
+              }
+            }
+            
+            // Delete the cookie
+            const domain = window.location.hostname;
+            // Try multiple deletion methods
+            document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+            document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${domain}`;
+            document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=.${domain}`;
+          }
+        });
+      }
+      
+      // Delete blocked cookies immediately and then set up periodic deletion
+      deleteBlockedCookies();
+      setInterval(deleteBlockedCookies, 1000); // Delete every second to catch any that slip through
+      
       // Intercept document.cookie setter to block analytics/marketing cookies
       const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie') || 
                                 Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'cookie');
       
-      if (!cookieDescriptor || !cookieDescriptor.set) return;
+      if (!cookieDescriptor || !cookieDescriptor.set) {
+        // Fallback: try direct property descriptor
+        deleteBlockedCookies();
+        setInterval(deleteBlockedCookies, 500);
+        STATE.cookieGuardInstalled = true;
+        return;
+      }
       
       const nativeCookieSetter = cookieDescriptor.set.bind(document);
       
       Object.defineProperty(document, 'cookie', {
         configurable: true,
+        writable: false,
         get: cookieDescriptor.get.bind(document),
         set: function(value) {
           // Extract cookie name from "name=value; attributes..."
@@ -319,8 +378,8 @@
           // If no preferences yet, block ALL analytics/marketing cookies
           if (!STATE.preferences || !STATE.preferences.categories) {
             if (isAnalytics || isMarketing) {
-              console.log('🚫 Cookie blocked until consent:', cookieName);
-              return; // Don't set the cookie
+              // DO NOT SET THE COOKIE - just return
+              return;
             }
             // Allow other cookies (necessary ones) when no preferences
             nativeCookieSetter(value);
@@ -332,19 +391,40 @@
           
           if ((isAnalytics && !accepted.has('analytics')) || 
               (isMarketing && !accepted.has('marketing'))) {
-            console.log('🚫 Cookie blocked (category not accepted):', cookieName);
+            // DO NOT SET THE COOKIE - just return
             return;
           }
           
           // All checks passed, allow the cookie
-          console.log('✅ Cookie allowed:', cookieName);
           nativeCookieSetter(value);
         }
       });
       
       STATE.cookieGuardInstalled = true;
-      console.log('Cookie guard installed');
     } catch (e) {
+      // Even if interceptor fails, use deletion as fallback
+      try {
+        function deleteBlockedCookies() {
+          if (!document.cookie) return;
+          const cookies = document.cookie.split('; ');
+          const consentCookieName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
+          const analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/];
+          const marketingPatterns = [/^_fbp/, /^fr$/, /^sb$/, /^wd$/];
+          
+          cookies.forEach(cookieStr => {
+            const cookieName = cookieStr.split('=')[0].trim();
+            if (cookieName === consentCookieName) return;
+            const isBlocked = analyticsPatterns.some(p => p.test(cookieName)) || 
+                            marketingPatterns.some(p => p.test(cookieName));
+            if (isBlocked) {
+              document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+              document.cookie = `${cookieName}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=${window.location.hostname}`;
+            }
+          });
+        }
+        deleteBlockedCookies();
+        setInterval(deleteBlockedCookies, 500);
+      } catch (e2) {}
       console.warn('Cookie guard installation failed:', e);
     }
   }
