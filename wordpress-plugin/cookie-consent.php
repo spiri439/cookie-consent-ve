@@ -27,6 +27,7 @@ class CookieConsent_Plugin {
         add_action('init', array($this, 'init'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('wp_head', array($this, 'output_cookie_guard_early'), 1); // Priority 1 = VERY early
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_action('wp_footer', array($this, 'output_config'));
         add_shortcode('cc_settings', array($this, 'shortcode_settings_link'));
@@ -114,6 +115,105 @@ class CookieConsent_Plugin {
         }
         
         return $sanitized;
+    }
+    
+    // Output minimal cookie guard inline VERY early in <head>
+    public function output_cookie_guard_early() {
+        ?>
+        <script>
+        (function(){
+            // Install cookie guard IMMEDIATELY - before any other scripts can run
+            if (typeof document === 'undefined' || typeof Object === 'undefined' || typeof Object.defineProperty === 'undefined') return;
+            
+            try {
+                var cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie') || 
+                                      Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'cookie');
+                
+                if (!cookieDescriptor || !cookieDescriptor.set) return;
+                
+                var nativeCookieSetter = cookieDescriptor.set.bind(document);
+                var STATE = { config: null, preferences: null, cookieName: 'cc_cookie' };
+                
+                // Try to load preferences from cookie
+                try {
+                    var cookies = document.cookie.split('; ');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var parts = cookies[i].split('=');
+                        if (parts[0].trim() === 'cc_cookie') {
+                            STATE.preferences = JSON.parse(decodeURIComponent(parts[1]));
+                            break;
+                        }
+                    }
+                } catch(e) {}
+                
+                var analyticsPatterns = [
+                    /^_ga/, /^_gid$/, /^_gat/, /^_gcl_au$/, /^__utm/, /^_uet/, 
+                    /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/,
+                    /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/
+                ];
+                
+                var marketingPatterns = [
+                    /^_fbp$/, /^fr$/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/,
+                    /^_fbp_/, /^fbc$/, /^sb$/, /^wd$/, /^xs$/, /^c_user$/, /^presence$/,
+                    /^act$/, /^m_pixel_ratio$/, /^spin$/, /^locale$/, /^datr$/,
+                    /^_pin/, /^_pinterest/, /^_ads/, /^_ad/, /^_adroll/, /^_scid/,
+                    /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/
+                ];
+                
+                Object.defineProperty(document, 'cookie', {
+                    configurable: true,
+                    writable: false,
+                    get: cookieDescriptor.get.bind(document),
+                    set: function(value) {
+                        var cookieName = String(value).split('=')[0].trim();
+                        
+                        // Always allow our consent cookie
+                        if (cookieName === 'cc_cookie') {
+                            nativeCookieSetter(value);
+                            return;
+                        }
+                        
+                        var isAnalytics = analyticsPatterns.some(function(pattern) {
+                            return pattern.test(cookieName);
+                        });
+                        
+                        var isMarketing = marketingPatterns.some(function(pattern) {
+                            return pattern.test(cookieName);
+                        });
+                        
+                        // If no preferences yet, block ALL analytics/marketing cookies
+                        if (!STATE.preferences || !STATE.preferences.categories) {
+                            if (isAnalytics || isMarketing) {
+                                // DO NOT SET THE COOKIE
+                                return;
+                            }
+                            nativeCookieSetter(value);
+                            return;
+                        }
+                        
+                        // If we have preferences, check them
+                        var accepted = STATE.preferences.categories || [];
+                        var acceptedSet = {};
+                        for (var j = 0; j < accepted.length; j++) {
+                            acceptedSet[accepted[j]] = true;
+                        }
+                        
+                        if ((isAnalytics && !acceptedSet['analytics']) || 
+                            (isMarketing && !acceptedSet['marketing'])) {
+                            // DO NOT SET THE COOKIE
+                            return;
+                        }
+                        
+                        // All checks passed, allow the cookie
+                        nativeCookieSetter(value);
+                    }
+                });
+            } catch(e) {
+                // Silent failure - will be retried when main script loads
+            }
+        })();
+        </script>
+        <?php
     }
     
     public function enqueue_scripts() {
