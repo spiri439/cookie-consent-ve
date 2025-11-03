@@ -436,13 +436,15 @@
       .cc-category__desc { font-size: 13px; color: #666; line-height: 1.5; }
       .cc-theme-dark .cc-category__desc { color: #999; }
       
-      .cc-toggle { position: relative; display: inline-block; width: 50px; height: 28px; }
-      .cc-toggle input { opacity: 0; width: 0; height: 0; }
-      .cc-toggle__slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 28px; }
+      .cc-toggle { position: relative; display: inline-block; width: 50px; height: 28px; cursor: pointer; }
+      .cc-toggle input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; padding: 0; }
+      .cc-toggle__slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.3s; border-radius: 28px; pointer-events: none; }
       .cc-toggle__slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: 0.3s; border-radius: 50%; }
       .cc-toggle input:checked + .cc-toggle__slider { background-color: #2563eb; }
+      .cc-toggle input:checked + .cc-toggle__slider:before { transform: translateX(22px); }
       .cc-toggle input:disabled + .cc-toggle__slider { background-color: #d1d5db; cursor: not-allowed; opacity: 0.6; }
       .cc-toggle input:checked:disabled + .cc-toggle__slider { background-color: #94a3b8; }
+      .cc-toggle:not(input:disabled) { cursor: pointer; }
       
       .cc-modal__footer { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; gap: 12px; justify-content: flex-end; }
       .cc-theme-dark .cc-modal__footer { border-color: #333; }
@@ -584,7 +586,7 @@
     mainContainer.appendChild(overlay);
     STATE.bypassInterceptor = false;
     
-    // Event listeners
+    // Event listeners for buttons
     modal.querySelectorAll('[data-cc-action]').forEach(btn => {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
@@ -596,6 +598,38 @@
           saveFromModal();
         }
       });
+    });
+    
+    // Event listeners for toggle switches - make sure clicks work
+    modal.querySelectorAll('input[type="checkbox"][data-category]').forEach(checkbox => {
+      // Make sure checkbox is clickable even when hidden
+      checkbox.style.position = 'absolute';
+      checkbox.style.zIndex = '1';
+      checkbox.style.opacity = '0';
+      checkbox.style.width = '50px';
+      checkbox.style.height = '28px';
+      checkbox.style.margin = '0';
+      checkbox.style.cursor = 'pointer';
+      
+      // Handle change event
+      checkbox.addEventListener('change', function(e) {
+        e.stopPropagation();
+        console.log('Toggle changed:', this.getAttribute('data-category'), this.checked);
+      });
+      
+      // Ensure label click works
+      const label = checkbox.closest('label.cc-toggle');
+      if (label) {
+        label.style.cursor = checkbox.disabled ? 'not-allowed' : 'pointer';
+        label.addEventListener('click', function(e) {
+          if (!checkbox.disabled) {
+            // Let the default behavior handle it (native label click)
+            e.stopPropagation();
+          } else {
+            e.preventDefault();
+          }
+        }, true); // Use capture phase
+      }
     });
     
     // Close on overlay click
@@ -654,10 +688,19 @@
   }
 
   function saveFromModal() {
-    const checkboxes = document.querySelectorAll('[data-category]');
+    // Get checkboxes from the modal specifically
+    const modalBody = document.querySelector('.cc-modal__body');
+    if (!modalBody) {
+      console.error('CookieConsent: Modal body not found');
+      return;
+    }
+    
+    const checkboxes = modalBody.querySelectorAll('input[type="checkbox"][data-category]');
     const selectedCategories = Array.from(checkboxes)
-      .filter(cb => cb.checked)
+      .filter(cb => cb.checked && !cb.disabled)
       .map(cb => cb.getAttribute('data-category'));
+    
+    console.log('Saving preferences:', selectedCategories);
     
     savePreferences({ categories: selectedCategories, timestamp: Date.now() });
     hideModal();
