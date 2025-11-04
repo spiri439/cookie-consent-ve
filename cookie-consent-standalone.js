@@ -652,8 +652,13 @@
       mainContainer = document.createElement('div');
       mainContainer.id = 'cc-main';
       mainContainer.className = 'cc-main';
+      // Force visibility with inline styles for mobile
+      mainContainer.style.cssText = 'position: fixed !important; z-index: 999999 !important; pointer-events: none !important; display: block !important; visibility: visible !important; opacity: 1 !important;';
       document.body.appendChild(mainContainer);
       STATE.bypassInterceptor = false;
+    } else {
+      // Ensure existing container is visible
+      mainContainer.style.cssText = 'position: fixed !important; z-index: 999999 !important; pointer-events: none !important; display: block !important; visibility: visible !important; opacity: 1 !important;';
     }
     
     // Create banner
