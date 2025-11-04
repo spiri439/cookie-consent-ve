@@ -879,7 +879,9 @@
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
     initializeScripts();
-    window.location.reload();
+    setTimeout(function() {
+      window.location.reload();
+    }, 100);
   }
 
   function rejectAll() {
@@ -888,7 +890,9 @@
     );
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
-    window.location.reload();
+    setTimeout(function() {
+      window.location.reload();
+    }, 100);
   }
 
   function showModal() {
