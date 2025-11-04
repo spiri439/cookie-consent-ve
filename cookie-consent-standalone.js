@@ -911,9 +911,27 @@
   }
 
   function hideBanner() {
+    // Hide via STATE.bannerElement
     if (STATE.bannerElement) {
       STATE.bannerElement.style.display = 'none';
+      STATE.bannerElement.style.visibility = 'hidden';
+      STATE.bannerElement.style.opacity = '0';
       STATE.modalShown = false;
+    }
+    // Also hide via DOM query as backup
+    const banner = document.querySelector('.cc-banner');
+    if (banner) {
+      banner.style.display = 'none';
+      banner.style.visibility = 'hidden';
+      banner.style.opacity = '0';
+    }
+    // Hide the main container if it only contains the banner
+    const mainContainer = document.getElementById('cc-main');
+    if (mainContainer) {
+      const hasModal = mainContainer.querySelector('.cc-overlay.show');
+      if (!hasModal) {
+        mainContainer.style.display = 'none';
+      }
     }
   }
 
