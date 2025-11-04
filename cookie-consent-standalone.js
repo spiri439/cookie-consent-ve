@@ -896,11 +896,13 @@
 
   function acceptAll() {
     if (!STATE.config || !STATE.config.categories) {
-      console.error('CookieConsent: STATE.config not initialized');
+      console.error('CookieConsent: STATE.config not initialized', STATE);
       return;
     }
     const categories = Object.keys(STATE.config.categories);
+    console.log('CookieConsent: Accepting all categories:', categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
+    console.log('CookieConsent: Preferences saved:', STATE.preferences);
     hideBanner();
     initializeScripts();
   }
