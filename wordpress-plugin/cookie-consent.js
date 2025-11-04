@@ -697,12 +697,39 @@
         
         if (action === 'accept') {
           console.log('CookieConsent: Calling acceptAll...');
+          console.log('CookieConsent: typeof acceptAll:', typeof acceptAll);
+          console.log('CookieConsent: typeof CookieConsent:', typeof CookieConsent);
+          console.log('CookieConsent: typeof CookieConsent.acceptAll:', typeof CookieConsent ? typeof CookieConsent.acceptAll : 'N/A');
+          
+          // Try direct function call first
           if (typeof acceptAll === 'function') {
-            acceptAll();
-          } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
-            CookieConsent.acceptAll();
+            console.log('CookieConsent: Calling acceptAll() directly...');
+            try {
+              acceptAll();
+            } catch (e) {
+              console.error('CookieConsent: Error calling acceptAll():', e);
+            }
+          } 
+          // Then try API call
+          else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+            console.log('CookieConsent: Calling CookieConsent.acceptAll()...');
+            try {
+              CookieConsent.acceptAll();
+            } catch (e) {
+              console.error('CookieConsent: Error calling CookieConsent.acceptAll():', e);
+            }
+          } 
+          // Fallback: call it directly from window if available
+          else if (typeof window.CookieConsent !== 'undefined' && typeof window.CookieConsent.acceptAll === 'function') {
+            console.log('CookieConsent: Calling window.CookieConsent.acceptAll()...');
+            try {
+              window.CookieConsent.acceptAll();
+            } catch (e) {
+              console.error('CookieConsent: Error calling window.CookieConsent.acceptAll():', e);
+            }
           } else {
-            console.error('CookieConsent: acceptAll function not found');
+            console.error('CookieConsent: acceptAll function not found anywhere!');
+            console.error('CookieConsent: Available methods:', typeof CookieConsent !== 'undefined' ? Object.keys(CookieConsent) : 'CookieConsent undefined');
           }
         } else if (action === 'reject') {
           if (typeof rejectAll === 'function') {
