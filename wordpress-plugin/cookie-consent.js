@@ -878,7 +878,6 @@
     const categories = Object.keys(STATE.config.categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
-    initializeScripts();
     setTimeout(function() {
       window.location.reload();
     }, 100);
