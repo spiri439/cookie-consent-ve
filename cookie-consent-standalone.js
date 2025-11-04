@@ -747,10 +747,57 @@
               state.preferences = prefs;
             }
             
-            // Hide banner
+            // Hide banner - try multiple methods
+            console.log('CookieConsent: Attempting to hide banner...');
+            console.log('CookieConsent: state.bannerElement:', state ? state.bannerElement : 'no state');
+            console.log('CookieConsent: STATE.bannerElement:', typeof STATE !== 'undefined' ? STATE.bannerElement : 'STATE undefined');
+            
+            // Method 1: Direct state access
             if (state && state.bannerElement) {
+              console.log('CookieConsent: Hiding via state.bannerElement');
               state.bannerElement.style.display = 'none';
+              state.bannerElement.style.visibility = 'hidden';
+              state.bannerElement.style.opacity = '0';
             }
+            
+            // Method 2: Try via STATE if different
+            if (typeof STATE !== 'undefined' && STATE.bannerElement && STATE.bannerElement !== state.bannerElement) {
+              console.log('CookieConsent: Hiding via STATE.bannerElement');
+              STATE.bannerElement.style.display = 'none';
+              STATE.bannerElement.style.visibility = 'hidden';
+              STATE.bannerElement.style.opacity = '0';
+            }
+            
+            // Method 3: Find banner via DOM
+            var bannerElement = document.querySelector('.cc-banner');
+            if (bannerElement) {
+              console.log('CookieConsent: Hiding via DOM query');
+              bannerElement.style.display = 'none';
+              bannerElement.style.visibility = 'hidden';
+              bannerElement.style.opacity = '0';
+            }
+            
+            // Method 4: Try hideBanner function if available
+            if (typeof hideBanner === 'function') {
+              console.log('CookieConsent: Calling hideBanner() function');
+              try {
+                hideBanner();
+              } catch (e) {
+                console.error('CookieConsent: Error calling hideBanner():', e);
+              }
+            }
+            
+            // Method 5: Try via API
+            if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.hide === 'function') {
+              console.log('CookieConsent: Calling CookieConsent.hide()');
+              try {
+                CookieConsent.hide();
+              } catch (e) {
+                console.error('CookieConsent: Error calling CookieConsent.hide():', e);
+              }
+            }
+            
+            console.log('CookieConsent: Banner hiding attempted');
             
             // Try to initialize scripts if function exists
             if (typeof initializeScripts === 'function') {
