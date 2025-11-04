@@ -690,16 +690,39 @@
         
         const action = this.getAttribute('data-cc-action');
         
-        try {
-          if (action === 'accept') {
-            acceptAll();
-          } else if (action === 'reject') {
-            rejectAll();
-          } else if (action === 'settings') {
-            showModal();
+        if (action === 'accept') {
+          // Use both direct call and API call for maximum compatibility
+          try {
+            if (typeof acceptAll === 'function') {
+              acceptAll();
+            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+              CookieConsent.acceptAll();
+            } else {
+              console.error('CookieConsent: acceptAll not available');
+            }
+          } catch (error) {
+            console.error('CookieConsent: Error accepting all:', error);
           }
-        } catch (error) {
-          // Silent error handling
+        } else if (action === 'reject') {
+          try {
+            if (typeof rejectAll === 'function') {
+              rejectAll();
+            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.rejectAll === 'function') {
+              CookieConsent.rejectAll();
+            }
+          } catch (error) {
+            console.error('CookieConsent: Error rejecting all:', error);
+          }
+        } else if (action === 'settings') {
+          try {
+            if (typeof showModal === 'function') {
+              showModal();
+            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.showPreferences === 'function') {
+              CookieConsent.showPreferences();
+            }
+          } catch (error) {
+            console.error('CookieConsent: Error showing settings:', error);
+          }
         }
         
         return false;
@@ -708,9 +731,25 @@
       // Also add mouseup as backup
       newBtn.addEventListener('mouseup', function(e) {
         const action = this.getAttribute('data-cc-action');
-        if (action === 'accept') acceptAll();
-        else if (action === 'reject') rejectAll();
-        else if (action === 'settings') showModal();
+        if (action === 'accept') {
+          if (typeof acceptAll === 'function') {
+            acceptAll();
+          } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+            CookieConsent.acceptAll();
+          }
+        } else if (action === 'reject') {
+          if (typeof rejectAll === 'function') {
+            rejectAll();
+          } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.rejectAll === 'function') {
+            CookieConsent.rejectAll();
+          }
+        } else if (action === 'settings') {
+          if (typeof showModal === 'function') {
+            showModal();
+          } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.showPreferences === 'function') {
+            CookieConsent.showPreferences();
+          }
+        }
       });
     });
     
@@ -856,6 +895,10 @@
   // ============================================================================
 
   function acceptAll() {
+    if (!STATE.config || !STATE.config.categories) {
+      console.error('CookieConsent: STATE.config not initialized');
+      return;
+    }
     const categories = Object.keys(STATE.config.categories);
     savePreferences({ categories: categories, timestamp: Date.now() });
     hideBanner();
