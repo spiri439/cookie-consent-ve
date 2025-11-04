@@ -309,12 +309,18 @@ class CookieConsent_Plugin {
                         // ALWAYS read preferences fresh from cookie - don't rely on STATE
                         var currentPreferences = null;
                         try {
-                            var cookies = document.cookie.split('; ');
-                            for (var prefIdx = 0; prefIdx < cookies.length; prefIdx++) {
-                                var parts = cookies[prefIdx].split('=');
-                                if (parts[0].trim() === 'cc_cookie') {
-                                    currentPreferences = JSON.parse(decodeURIComponent(parts[1]));
-                                    break;
+                            // Read from the cookie we just set if it's cc_cookie, otherwise read from document.cookie
+                            if (cookieName === 'cc_cookie') {
+                                var cookieValue = value.split('=')[1].split(';')[0];
+                                currentPreferences = JSON.parse(decodeURIComponent(cookieValue));
+                            } else {
+                                var cookies = document.cookie.split('; ');
+                                for (var prefIdx = 0; prefIdx < cookies.length; prefIdx++) {
+                                    var parts = cookies[prefIdx].split('=');
+                                    if (parts[0].trim() === 'cc_cookie') {
+                                        currentPreferences = JSON.parse(decodeURIComponent(parts[1]));
+                                        break;
+                                    }
                                 }
                             }
                         } catch(e) {}

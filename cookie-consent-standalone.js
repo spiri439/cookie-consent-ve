@@ -696,133 +696,11 @@
         console.log('CookieConsent: Button clicked, action:', action);
         
         if (action === 'accept') {
-          console.log('CookieConsent: Accept All button clicked');
-          
-          // DIRECT IMPLEMENTATION - Don't rely on function being in scope
-          try {
-            // Get STATE from window or closure
-            var state = typeof STATE !== 'undefined' ? STATE : (typeof window.CookieConsent !== 'undefined' && window.CookieConsent._state ? window.CookieConsent._state : null);
-            
-            if (!state || !state.config || !state.config.categories) {
-              console.error('CookieConsent: Cannot access STATE.config');
-              // Try via CookieConsent API
-              if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
-                console.log('CookieConsent: Trying CookieConsent.acceptAll()...');
-                CookieConsent.acceptAll();
-                return false;
-              }
-              return false;
-            }
-            
-            console.log('CookieConsent: STATE.config found, categories:', Object.keys(state.config.categories));
-            
-            // Get all categories
-            var categories = Object.keys(state.config.categories);
-            console.log('CookieConsent: Accepting categories:', categories);
-            
-            if (!categories || categories.length === 0) {
-              console.error('CookieConsent: No categories to accept!');
-              return false;
-            }
-            
-            // Create preferences object
-            var prefs = { categories: categories, timestamp: Date.now() };
-            console.log('CookieConsent: Preferences object:', prefs);
-            
-            // Save preferences directly
-            var cookieName = state.config.cookieName || 'cc_cookie';
-            var cookieExpiry = state.config.cookieExpiry || 365;
-            var cookieValue = JSON.stringify(prefs);
-            
-            // Set cookie
-            var date = new Date();
-            date.setTime(date.getTime() + (cookieExpiry * 24 * 60 * 60 * 1000));
-            var expires = 'expires=' + date.toUTCString();
-            document.cookie = cookieName + '=' + encodeURIComponent(cookieValue) + ';' + expires + ';path=/';
-            
-            console.log('CookieConsent: Cookie set:', cookieName, '=', cookieValue);
-            
-            // Update STATE
-            if (state) {
-              state.preferences = prefs;
-            }
-            
-            // Hide banner - try multiple methods
-            console.log('CookieConsent: Attempting to hide banner...');
-            console.log('CookieConsent: state.bannerElement:', state ? state.bannerElement : 'no state');
-            console.log('CookieConsent: STATE.bannerElement:', typeof STATE !== 'undefined' ? STATE.bannerElement : 'STATE undefined');
-            
-            // Method 1: Direct state access
-            if (state && state.bannerElement) {
-              console.log('CookieConsent: Hiding via state.bannerElement');
-              state.bannerElement.style.display = 'none';
-              state.bannerElement.style.visibility = 'hidden';
-              state.bannerElement.style.opacity = '0';
-            }
-            
-            // Method 2: Try via STATE if different
-            if (typeof STATE !== 'undefined' && STATE.bannerElement && STATE.bannerElement !== state.bannerElement) {
-              console.log('CookieConsent: Hiding via STATE.bannerElement');
-              STATE.bannerElement.style.display = 'none';
-              STATE.bannerElement.style.visibility = 'hidden';
-              STATE.bannerElement.style.opacity = '0';
-            }
-            
-            // Method 3: Find banner via DOM
-            var bannerElement = document.querySelector('.cc-banner');
-            if (bannerElement) {
-              console.log('CookieConsent: Hiding via DOM query');
-              bannerElement.style.display = 'none';
-              bannerElement.style.visibility = 'hidden';
-              bannerElement.style.opacity = '0';
-            }
-            
-            // Method 4: Try hideBanner function if available
-            if (typeof hideBanner === 'function') {
-              console.log('CookieConsent: Calling hideBanner() function');
-              try {
-                hideBanner();
-              } catch (e) {
-                console.error('CookieConsent: Error calling hideBanner():', e);
-              }
-            }
-            
-            // Method 5: Try via API
-            if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.hide === 'function') {
-              console.log('CookieConsent: Calling CookieConsent.hide()');
-              try {
-                CookieConsent.hide();
-              } catch (e) {
-                console.error('CookieConsent: Error calling CookieConsent.hide():', e);
-              }
-            }
-            
-            console.log('CookieConsent: Banner hiding attempted');
-            
-            // Try to initialize scripts if function exists
-            if (typeof initializeScripts === 'function') {
-              try {
-                initializeScripts();
-              } catch (e) {
-                console.error('CookieConsent: Error in initializeScripts:', e);
-              }
-            }
-            
-            console.log('CookieConsent: Accept All completed successfully!');
-            
-          } catch (error) {
-            console.error('CookieConsent: Error in Accept All handler:', error);
-            console.error('CookieConsent: Error stack:', error.stack);
-            
-            // Last resort: try API call
-            if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
-              console.log('CookieConsent: Falling back to CookieConsent.acceptAll()...');
-              try {
-                CookieConsent.acceptAll();
-              } catch (e2) {
-                console.error('CookieConsent: API call also failed:', e2);
-              }
-            }
+          // Use the same approach as reject and settings - call the function directly
+          if (typeof acceptAll === 'function') {
+            acceptAll();
+          } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+            CookieConsent.acceptAll();
           }
         } else if (action === 'reject') {
           if (typeof rejectAll === 'function') {
@@ -990,44 +868,10 @@
   // ============================================================================
 
   function acceptAll() {
-    console.log('CookieConsent: acceptAll() called');
-    console.log('CookieConsent: STATE:', STATE);
-    console.log('CookieConsent: STATE.config:', STATE.config);
-    
-    if (!STATE.config) {
-      console.error('CookieConsent: STATE.config is null/undefined');
-      return;
-    }
-    
-    if (!STATE.config.categories) {
-      console.error('CookieConsent: STATE.config.categories is null/undefined');
-      return;
-    }
-    
-    try {
-      const categories = Object.keys(STATE.config.categories);
-      console.log('CookieConsent: Accepting all categories:', categories);
-      
-      if (!categories || categories.length === 0) {
-        console.error('CookieConsent: No categories found!');
-        return;
-      }
-      
-      const prefs = { categories: categories, timestamp: Date.now() };
-      console.log('CookieConsent: Saving preferences:', prefs);
-      
-      savePreferences(prefs);
-      
-      console.log('CookieConsent: Preferences saved, STATE.preferences:', STATE.preferences);
-      
-      hideBanner();
-      initializeScripts();
-      
-      console.log('CookieConsent: acceptAll() completed successfully');
-    } catch (error) {
-      console.error('CookieConsent: Error in acceptAll():', error);
-      console.error('CookieConsent: Error stack:', error.stack);
-    }
+    const categories = Object.keys(STATE.config.categories);
+    savePreferences({ categories: categories, timestamp: Date.now() });
+    hideBanner();
+    initializeScripts();
   }
 
   function rejectAll() {
