@@ -949,7 +949,6 @@
     // Get checkboxes from the modal specifically
     const modalBody = document.querySelector('.cc-modal__body');
     if (!modalBody) {
-      console.error('CookieConsent: Modal body not found');
       return;
     }
     
