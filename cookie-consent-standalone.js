@@ -693,22 +693,21 @@
         e.stopPropagation();
         e.stopImmediatePropagation();
         
-        console.log('CookieConsent: Button clicked, action:', action);
+        const btnAction = this.getAttribute('data-cc-action');
         
-        if (action === 'accept') {
-          // Use the same approach as reject and settings - call the function directly
+        if (btnAction === 'accept') {
           if (typeof acceptAll === 'function') {
             acceptAll();
           } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
             CookieConsent.acceptAll();
           }
-        } else if (action === 'reject') {
+        } else if (btnAction === 'reject') {
           if (typeof rejectAll === 'function') {
             rejectAll();
           } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.rejectAll === 'function') {
             CookieConsent.rejectAll();
           }
-        } else if (action === 'settings') {
+        } else if (btnAction === 'settings') {
           if (typeof showModal === 'function') {
             showModal();
           } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.showPreferences === 'function') {
@@ -723,6 +722,14 @@
       newBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        const btnAction = this.getAttribute('data-cc-action');
+        if (btnAction === 'accept' && typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+          CookieConsent.acceptAll();
+        } else if (btnAction === 'reject' && typeof CookieConsent !== 'undefined' && typeof CookieConsent.rejectAll === 'function') {
+          CookieConsent.rejectAll();
+        } else if (btnAction === 'settings' && typeof CookieConsent !== 'undefined' && typeof CookieConsent.showPreferences === 'function') {
+          CookieConsent.showPreferences();
+        }
       }, true);
     });
     
