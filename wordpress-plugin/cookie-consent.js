@@ -660,6 +660,8 @@
     STATE.bypassInterceptor = true;
     const banner = document.createElement('div');
     banner.className = `cc-banner cc-position-${STATE.config.position}`;
+    // Force visibility with inline styles for mobile
+    banner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important;';
     banner.innerHTML = `
       <div class="cc-banner__title">🍪 Cookie Preferences</div>
       <div class="cc-banner__text">
