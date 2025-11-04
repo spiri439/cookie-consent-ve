@@ -581,45 +581,45 @@
       
       /* Responsive Design */
       @media (max-width: 768px) {
-        .cc-main { width: 100% !important; z-index: 999999 !important; }
-        .cc-banner { max-width: calc(100% - 20px) !important; padding: 20px !important; margin: 0 !important; width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; }
-        .cc-banner__title { font-size: 16px; }
-        .cc-banner__text { font-size: 13px; margin-bottom: 16px; }
-        .cc-banner__actions { flex-direction: column; }
-        .cc-banner__btn { width: 100%; text-align: center; }
-        .cc-modal { width: 95%; max-width: none; margin: 10px; }
-        .cc-modal__header { padding: 20px; }
-        .cc-modal__title { font-size: 18px; }
-        .cc-modal__body { padding: 20px; }
-        .cc-modal__footer { padding: 16px 20px; flex-direction: column-reverse; }
-        .cc-modal__footer button { width: 100%; }
-        .cc-category { padding: 12px; }
-        .cc-category__header { flex-wrap: wrap; gap: 12px; }
-        .cc-category__title { font-size: 15px; }
-        .cc-category__desc { font-size: 12px; }
-        .cc-position-bottom-right { bottom: 10px; right: 10px; }
-        .cc-position-bottom-left { bottom: 10px; left: 10px; }
-        .cc-position-bottom-center { bottom: 10px; left: 50%; transform: translateX(-50%); width: calc(100% - 20px); max-width: calc(100% - 20px); }
-        .cc-position-top-right { top: 10px; right: 10px; }
-        .cc-position-top-left { top: 10px; left: 10px; }
-        .cc-position-top-center { top: 10px; left: 50%; transform: translateX(-50%); width: calc(100% - 20px); max-width: calc(100% - 20px); }
+        .cc-main { width: 100% !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; pointer-events: none !important; }
+        .cc-banner { max-width: calc(100% - 20px) !important; padding: 20px !important; margin: 0 !important; width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important; }
+        .cc-banner__title { font-size: 16px !important; }
+        .cc-banner__text { font-size: 13px !important; margin-bottom: 16px !important; }
+        .cc-banner__actions { flex-direction: column !important; }
+        .cc-banner__btn { width: 100% !important; text-align: center !important; pointer-events: auto !important; z-index: 1000000 !important; }
+        .cc-modal { width: 95% !important; max-width: none !important; margin: 10px !important; }
+        .cc-modal__header { padding: 20px !important; }
+        .cc-modal__title { font-size: 18px !important; }
+        .cc-modal__body { padding: 20px !important; }
+        .cc-modal__footer { padding: 16px 20px !important; flex-direction: column-reverse !important; }
+        .cc-modal__footer button { width: 100% !important; }
+        .cc-category { padding: 12px !important; }
+        .cc-category__header { flex-wrap: wrap !important; gap: 12px !important; }
+        .cc-category__title { font-size: 15px !important; }
+        .cc-category__desc { font-size: 12px !important; }
+        .cc-position-bottom-right { bottom: 10px !important; right: 10px !important; left: auto !important; top: auto !important; }
+        .cc-position-bottom-left { bottom: 10px !important; left: 10px !important; right: auto !important; top: auto !important; }
+        .cc-position-bottom-center { bottom: 10px !important; left: 50% !important; right: auto !important; top: auto !important; transform: translateX(-50%) !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; }
+        .cc-position-top-right { top: 10px !important; right: 10px !important; left: auto !important; bottom: auto !important; }
+        .cc-position-top-left { top: 10px !important; left: 10px !important; right: auto !important; bottom: auto !important; }
+        .cc-position-top-center { top: 10px !important; left: 50% !important; right: auto !important; bottom: auto !important; transform: translateX(-50%) !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; }
       }
       
       @media (max-width: 480px) {
-        .cc-main { width: 100% !important; z-index: 999999 !important; }
-        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; }
-        .cc-banner__title { font-size: 15px; margin-bottom: 10px; }
-        .cc-banner__text { font-size: 12px; margin-bottom: 14px; }
-        .cc-banner__btn { padding: 10px 16px; font-size: 13px; }
-        .cc-modal__header { padding: 16px; }
-        .cc-modal__title { font-size: 16px; }
-        .cc-modal__body { padding: 16px; }
-        .cc-modal__close { width: 28px; height: 28px; font-size: 20px; }
-        .cc-category { padding: 10px; }
-        .cc-toggle { width: 44px; height: 24px; }
-        .cc-toggle input { width: 44px; height: 24px; }
-        .cc-toggle__slider:before { height: 18px; width: 18px; left: 3px; bottom: 3px; }
-        .cc-toggle input:checked + .cc-toggle__slider:before { transform: translateX(20px); }
+        .cc-main { width: 100% !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; pointer-events: none !important; }
+        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important; }
+        .cc-banner__title { font-size: 15px !important; margin-bottom: 10px !important; }
+        .cc-banner__text { font-size: 12px !important; margin-bottom: 14px !important; }
+        .cc-banner__btn { padding: 10px 16px !important; font-size: 13px !important; pointer-events: auto !important; z-index: 1000000 !important; }
+        .cc-modal__header { padding: 16px !important; }
+        .cc-modal__title { font-size: 16px !important; }
+        .cc-modal__body { padding: 16px !important; }
+        .cc-modal__close { width: 28px !important; height: 28px !important; font-size: 20px !important; }
+        .cc-category { padding: 10px !important; }
+        .cc-toggle { width: 44px !important; height: 24px !important; }
+        .cc-toggle input { width: 44px !important; height: 24px !important; }
+        .cc-toggle__slider:before { height: 18px !important; width: 18px !important; left: 3px !important; bottom: 3px !important; }
+        .cc-toggle input:checked + .cc-toggle__slider:before { transform: translateX(20px) !important; }
       }
       
       /* Position variants */
