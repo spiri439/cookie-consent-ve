@@ -676,66 +676,33 @@
     mainContainer.appendChild(banner);
     STATE.bypassInterceptor = false;
     
-    // Add event listeners with better handling
+    // Add event listeners - use direct assignment instead of cloneNode
     banner.querySelectorAll('[data-cc-action]').forEach(btn => {
-      // Remove any existing listeners
-      const newBtn = btn.cloneNode(true);
+      const action = btn.getAttribute('data-cc-action');
+      
+      // Remove all existing event listeners by replacing the button
+      const newBtn = document.createElement('button');
+      newBtn.className = btn.className;
+      newBtn.setAttribute('data-cc-action', action);
+      newBtn.textContent = btn.textContent;
       btn.parentNode.replaceChild(newBtn, btn);
       
-      // Add click listener to new button
-      newBtn.addEventListener('click', function(e) {
+      // Add onclick as primary handler (works even if other scripts interfere)
+      newBtn.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
         e.stopImmediatePropagation();
         
-        const action = this.getAttribute('data-cc-action');
+        console.log('CookieConsent: Button clicked, action:', action);
         
         if (action === 'accept') {
-          // Use both direct call and API call for maximum compatibility
-          try {
-            if (typeof acceptAll === 'function') {
-              acceptAll();
-            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
-              CookieConsent.acceptAll();
-            } else {
-              console.error('CookieConsent: acceptAll not available');
-            }
-          } catch (error) {
-            console.error('CookieConsent: Error accepting all:', error);
-          }
-        } else if (action === 'reject') {
-          try {
-            if (typeof rejectAll === 'function') {
-              rejectAll();
-            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.rejectAll === 'function') {
-              CookieConsent.rejectAll();
-            }
-          } catch (error) {
-            console.error('CookieConsent: Error rejecting all:', error);
-          }
-        } else if (action === 'settings') {
-          try {
-            if (typeof showModal === 'function') {
-              showModal();
-            } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.showPreferences === 'function') {
-              CookieConsent.showPreferences();
-            }
-          } catch (error) {
-            console.error('CookieConsent: Error showing settings:', error);
-          }
-        }
-        
-        return false;
-      }, true); // Use capture phase
-      
-      // Also add mouseup as backup
-      newBtn.addEventListener('mouseup', function(e) {
-        const action = this.getAttribute('data-cc-action');
-        if (action === 'accept') {
+          console.log('CookieConsent: Calling acceptAll...');
           if (typeof acceptAll === 'function') {
             acceptAll();
           } else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
             CookieConsent.acceptAll();
+          } else {
+            console.error('CookieConsent: acceptAll function not found');
           }
         } else if (action === 'reject') {
           if (typeof rejectAll === 'function') {
@@ -750,7 +717,15 @@
             CookieConsent.showPreferences();
           }
         }
-      });
+        
+        return false;
+      };
+      
+      // Also add addEventListener as backup
+      newBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
     });
     
     return banner;
