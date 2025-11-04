@@ -298,8 +298,26 @@ class CookieConsent_Plugin {
                         // Always allow our consent cookie
                         if (cookieName === 'cc_cookie') {
                             nativeCookieSetter(value);
+                            // Update STATE.preferences immediately when consent cookie is set
+                            try {
+                                var cookieValue = value.split('=')[1].split(';')[0];
+                                STATE.preferences = JSON.parse(decodeURIComponent(cookieValue));
+                            } catch(e) {}
                             return;
                         }
+                        
+                        // ALWAYS read preferences fresh from cookie - don't rely on STATE
+                        var currentPreferences = null;
+                        try {
+                            var cookies = document.cookie.split('; ');
+                            for (var prefIdx = 0; prefIdx < cookies.length; prefIdx++) {
+                                var parts = cookies[prefIdx].split('=');
+                                if (parts[0].trim() === 'cc_cookie') {
+                                    currentPreferences = JSON.parse(decodeURIComponent(parts[1]));
+                                    break;
+                                }
+                            }
+                        } catch(e) {}
                         
                         var isAnalytics = analyticsPatterns.some(function(pattern) {
                             return pattern.test(cookieName);
@@ -310,7 +328,7 @@ class CookieConsent_Plugin {
                         });
                         
                         // If no preferences yet, block ALL analytics/marketing cookies
-                        if (!STATE.preferences || !STATE.preferences.categories) {
+                        if (!currentPreferences || !currentPreferences.categories) {
                             if (isAnalytics || isMarketing) {
                                 // DO NOT SET THE COOKIE - Block it completely
                                 // Also delete it immediately in case it was set before guard
@@ -334,7 +352,7 @@ class CookieConsent_Plugin {
                         }
                         
                         // If we have preferences, check them
-                        var accepted = STATE.preferences.categories || [];
+                        var accepted = currentPreferences.categories || [];
                         var acceptedSet = {};
                         for (var j = 0; j < accepted.length; j++) {
                             acceptedSet[accepted[j]] = true;
