@@ -977,7 +977,9 @@
     hideModal();
     hideBanner();
     initializeScripts();
-    window.location.reload();
+    setTimeout(function() {
+      window.location.reload();
+    }, 100);
   }
 
   // ============================================================================
