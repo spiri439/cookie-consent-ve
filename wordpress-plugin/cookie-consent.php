@@ -411,12 +411,26 @@ class CookieConsent_Plugin {
         <script>
         (function() {
             // Wait for DOM and script to be ready
+            var maxRetries = 100; // 5 seconds max wait
+            var retryCount = 0;
+            
             function initCookieConsent() {
-                if (typeof CookieConsent !== 'undefined') {
-                    CookieConsent.init(<?php echo json_encode($this->get_js_config()); ?>);
+                if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.init === 'function') {
+                    try {
+                        var config = <?php echo json_encode($this->get_js_config()); ?>;
+                        console.log('CookieConsent: Initializing with config:', config);
+                        CookieConsent.init(config);
+                        console.log('CookieConsent: Initialization complete');
+                    } catch (error) {
+                        console.error('CookieConsent: Error during initialization:', error);
+                    }
                 } else {
-                    // Retry if script not loaded yet
-                    setTimeout(initCookieConsent, 50);
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        setTimeout(initCookieConsent, 50);
+                    } else {
+                        console.error('CookieConsent: Script failed to load after ' + (maxRetries * 50) + 'ms');
+                    }
                 }
             }
             
@@ -447,6 +461,7 @@ class CookieConsent_Plugin {
             'position' => $this->settings['position'],
             'theme' => $this->settings['theme'],
             'autoShow' => $this->settings['auto_show'] === 'yes',
+            'cookieName' => $this->settings['cookie_name'],
             'cookieExpiry' => intval($this->settings['cookie_expiry']),
             'reloadOnChange' => $this->settings['reload_on_change'] === 'yes'
         );
