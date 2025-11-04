@@ -511,12 +511,12 @@
   function createStyles() {
     const styles = document.createElement('style');
     styles.textContent = `
-      .cc-main { position: fixed; z-index: 999999 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; pointer-events: none; }
-      .cc-main * { box-sizing: border-box; }
-      .cc-main > * { pointer-events: auto; }
+      .cc-main { position: fixed !important; z-index: 999999 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important; pointer-events: none !important; }
+      .cc-main * { box-sizing: border-box !important; }
+      .cc-main > * { pointer-events: auto !important; }
       
       /* Banner */
-      .cc-banner { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 24px; max-width: 520px; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed; }
+      .cc-banner { background: #fff !important; border: 1px solid #e5e7eb !important; border-radius: 12px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; padding: 24px !important; max-width: 520px !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important; }
       .cc-theme-dark .cc-banner { background: #1a1a1a; border-color: #333; color: #fff; }
       
       .cc-banner__title { font-size: 18px; font-weight: 600; margin: 0 0 12px; color: #111; }
@@ -605,9 +605,9 @@
         .cc-position-top-center { top: 10px !important; left: 50% !important; right: auto !important; bottom: auto !important; transform: translateX(-50%) !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; }
       }
       
-      @media (max-width: 480px) {
-        .cc-main { width: 100% !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; pointer-events: none !important; }
-        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important; }
+      @media (max-width: 480px), (pointer: coarse) and (max-width: 768px) {
+        .cc-main { width: 100% !important; z-index: 999999 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; pointer-events: none !important; display: block !important; visibility: visible !important; opacity: 1 !important; }
+        .cc-banner { padding: 16px !important; width: calc(100% - 20px) !important; max-width: calc(100% - 20px) !important; display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important; background: #fff !important; }
         .cc-banner__title { font-size: 15px !important; margin-bottom: 10px !important; }
         .cc-banner__text { font-size: 12px !important; margin-bottom: 14px !important; }
         .cc-banner__btn { padding: 10px 16px !important; font-size: 13px !important; pointer-events: auto !important; z-index: 1000000 !important; }
