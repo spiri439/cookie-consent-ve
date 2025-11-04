@@ -696,40 +696,86 @@
         console.log('CookieConsent: Button clicked, action:', action);
         
         if (action === 'accept') {
-          console.log('CookieConsent: Calling acceptAll...');
-          console.log('CookieConsent: typeof acceptAll:', typeof acceptAll);
-          console.log('CookieConsent: typeof CookieConsent:', typeof CookieConsent);
-          console.log('CookieConsent: typeof CookieConsent.acceptAll:', typeof CookieConsent ? typeof CookieConsent.acceptAll : 'N/A');
+          console.log('CookieConsent: Accept All button clicked');
           
-          // Try direct function call first
-          if (typeof acceptAll === 'function') {
-            console.log('CookieConsent: Calling acceptAll() directly...');
-            try {
-              acceptAll();
-            } catch (e) {
-              console.error('CookieConsent: Error calling acceptAll():', e);
+          // DIRECT IMPLEMENTATION - Don't rely on function being in scope
+          try {
+            // Get STATE from window or closure
+            var state = typeof STATE !== 'undefined' ? STATE : (typeof window.CookieConsent !== 'undefined' && window.CookieConsent._state ? window.CookieConsent._state : null);
+            
+            if (!state || !state.config || !state.config.categories) {
+              console.error('CookieConsent: Cannot access STATE.config');
+              // Try via CookieConsent API
+              if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+                console.log('CookieConsent: Trying CookieConsent.acceptAll()...');
+                CookieConsent.acceptAll();
+                return false;
+              }
+              return false;
             }
-          } 
-          // Then try API call
-          else if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
-            console.log('CookieConsent: Calling CookieConsent.acceptAll()...');
-            try {
-              CookieConsent.acceptAll();
-            } catch (e) {
-              console.error('CookieConsent: Error calling CookieConsent.acceptAll():', e);
+            
+            console.log('CookieConsent: STATE.config found, categories:', Object.keys(state.config.categories));
+            
+            // Get all categories
+            var categories = Object.keys(state.config.categories);
+            console.log('CookieConsent: Accepting categories:', categories);
+            
+            if (!categories || categories.length === 0) {
+              console.error('CookieConsent: No categories to accept!');
+              return false;
             }
-          } 
-          // Fallback: call it directly from window if available
-          else if (typeof window.CookieConsent !== 'undefined' && typeof window.CookieConsent.acceptAll === 'function') {
-            console.log('CookieConsent: Calling window.CookieConsent.acceptAll()...');
-            try {
-              window.CookieConsent.acceptAll();
-            } catch (e) {
-              console.error('CookieConsent: Error calling window.CookieConsent.acceptAll():', e);
+            
+            // Create preferences object
+            var prefs = { categories: categories, timestamp: Date.now() };
+            console.log('CookieConsent: Preferences object:', prefs);
+            
+            // Save preferences directly
+            var cookieName = state.config.cookieName || 'cc_cookie';
+            var cookieExpiry = state.config.cookieExpiry || 365;
+            var cookieValue = JSON.stringify(prefs);
+            
+            // Set cookie
+            var date = new Date();
+            date.setTime(date.getTime() + (cookieExpiry * 24 * 60 * 60 * 1000));
+            var expires = 'expires=' + date.toUTCString();
+            document.cookie = cookieName + '=' + encodeURIComponent(cookieValue) + ';' + expires + ';path=/';
+            
+            console.log('CookieConsent: Cookie set:', cookieName, '=', cookieValue);
+            
+            // Update STATE
+            if (state) {
+              state.preferences = prefs;
             }
-          } else {
-            console.error('CookieConsent: acceptAll function not found anywhere!');
-            console.error('CookieConsent: Available methods:', typeof CookieConsent !== 'undefined' ? Object.keys(CookieConsent) : 'CookieConsent undefined');
+            
+            // Hide banner
+            if (state && state.bannerElement) {
+              state.bannerElement.style.display = 'none';
+            }
+            
+            // Try to initialize scripts if function exists
+            if (typeof initializeScripts === 'function') {
+              try {
+                initializeScripts();
+              } catch (e) {
+                console.error('CookieConsent: Error in initializeScripts:', e);
+              }
+            }
+            
+            console.log('CookieConsent: Accept All completed successfully!');
+            
+          } catch (error) {
+            console.error('CookieConsent: Error in Accept All handler:', error);
+            console.error('CookieConsent: Error stack:', error.stack);
+            
+            // Last resort: try API call
+            if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.acceptAll === 'function') {
+              console.log('CookieConsent: Falling back to CookieConsent.acceptAll()...');
+              try {
+                CookieConsent.acceptAll();
+              } catch (e2) {
+                console.error('CookieConsent: API call also failed:', e2);
+              }
+            }
           }
         } else if (action === 'reject') {
           if (typeof rejectAll === 'function') {
