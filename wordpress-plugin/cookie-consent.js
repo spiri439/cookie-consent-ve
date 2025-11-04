@@ -870,16 +870,44 @@
   // ============================================================================
 
   function acceptAll() {
-    if (!STATE.config || !STATE.config.categories) {
-      console.error('CookieConsent: STATE.config not initialized', STATE);
+    console.log('CookieConsent: acceptAll() called');
+    console.log('CookieConsent: STATE:', STATE);
+    console.log('CookieConsent: STATE.config:', STATE.config);
+    
+    if (!STATE.config) {
+      console.error('CookieConsent: STATE.config is null/undefined');
       return;
     }
-    const categories = Object.keys(STATE.config.categories);
-    console.log('CookieConsent: Accepting all categories:', categories);
-    savePreferences({ categories: categories, timestamp: Date.now() });
-    console.log('CookieConsent: Preferences saved:', STATE.preferences);
-    hideBanner();
-    initializeScripts();
+    
+    if (!STATE.config.categories) {
+      console.error('CookieConsent: STATE.config.categories is null/undefined');
+      return;
+    }
+    
+    try {
+      const categories = Object.keys(STATE.config.categories);
+      console.log('CookieConsent: Accepting all categories:', categories);
+      
+      if (!categories || categories.length === 0) {
+        console.error('CookieConsent: No categories found!');
+        return;
+      }
+      
+      const prefs = { categories: categories, timestamp: Date.now() };
+      console.log('CookieConsent: Saving preferences:', prefs);
+      
+      savePreferences(prefs);
+      
+      console.log('CookieConsent: Preferences saved, STATE.preferences:', STATE.preferences);
+      
+      hideBanner();
+      initializeScripts();
+      
+      console.log('CookieConsent: acceptAll() completed successfully');
+    } catch (error) {
+      console.error('CookieConsent: Error in acceptAll():', error);
+      console.error('CookieConsent: Error stack:', error.stack);
+    }
   }
 
   function rejectAll() {
