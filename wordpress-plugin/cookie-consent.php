@@ -3,7 +3,7 @@
  * Plugin Name: Cookie Consent VE
  * Plugin URI: https://vesrl.ro
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.5.1
+ * Version: 1.1.5
  * Author: VE
  * Author URI: https://vesrl.ro
  * License: MIT
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CC_VERSION', '1.5.1');
+define('CC_VERSION', '1.1.5');
 define('CC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CC_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -40,21 +40,22 @@ class CookieConsent_Plugin {
         // Stop cache/optimization plugins from deferring or delaying our script.
         add_filter('script_loader_tag', array($this, 'exclude_from_optimization'), 10, 3);
 
-        // Admin "Scan site for cookies" action.
-        add_action('admin_post_cc_scan_cookies', array($this, 'handle_scan'));
-
         // Admin "Update from GitHub" action.
         add_action('admin_post_cc_update_github', array($this, 'handle_github_update'));
 
-        // Front-end "Scan Cookies" button in the admin bar (admins only) + its
-        // AJAX endpoint. This reads the REAL cookies on the page (incl. JS-set
-        // ones a server scan can't see).
+        // In-browser cookie scanner (reads the REAL cookies on the page, incl.
+        // JS-set ones). Works without the server fetching itself. The server-side
+        // scanner is disabled — it failed on hosts that block loopback requests.
         add_action('admin_bar_menu', array($this, 'admin_bar_node'), 100);
         add_action('wp_footer', array($this, 'admin_bar_scan_script'), 100);
         add_action('wp_ajax_cc_scan_clientside', array($this, 'ajax_scan_clientside'));
 
-        // Load settings
-        $this->settings = get_option('cc_settings', $this->get_default_settings());
+        // Load settings, merged over defaults so every top-level key always
+        // exists (prevents the settings page from erroring on sites upgraded
+        // from an older version whose saved options lack newer keys).
+        $saved = get_option('cc_settings', array());
+        if (!is_array($saved)) { $saved = array(); }
+        $this->settings = array_merge($this->get_default_settings(), $saved);
     }
     
     public function init() {
@@ -1012,11 +1013,6 @@ class CookieConsent_Plugin {
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
             <?php
-            if (isset($_GET['cc_scan_error']) && $_GET['cc_scan_error'] !== '') {
-                echo '<div class="notice notice-error"><p>' . esc_html__('Scan failed:', 'cookie-consent') . ' ' . esc_html(rawurldecode($_GET['cc_scan_error'])) . '</p></div>';
-            } elseif (isset($_GET['cc_scanned'])) {
-                echo '<div class="notice notice-success"><p>' . sprintf(esc_html__('Scan complete — %d cookie(s) found. Review and Save Changes below.', 'cookie-consent'), intval($_GET['cc_scanned'])) . '</p></div>';
-            }
             if (isset($_GET['cc_update'])) {
                 $msg = isset($_GET['cc_update_msg']) ? rawurldecode($_GET['cc_update_msg']) : '';
                 $cls = $_GET['cc_update'] === 'success' ? 'notice-success' : 'notice-error';
@@ -1025,21 +1021,56 @@ class CookieConsent_Plugin {
             ?>
 
             <div style="margin:16px 0;">
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;">
-                    <input type="hidden" name="action" value="cc_scan_cookies">
-                    <?php wp_nonce_field('cc_scan_cookies'); ?>
-                    <?php submit_button(__('Scan Cookies', 'cookie-consent'), 'secondary', 'cc_scan_submit', false); ?>
-                </form>
+                <button type="button" class="button button-secondary" id="cc-inbrowser-scan"><?php _e('Scan Cookies', 'cookie-consent'); ?></button>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;margin-left:8px;" onsubmit="return confirm('<?php echo esc_js(__('Download the latest version from GitHub and overwrite the plugin files?', 'cookie-consent')); ?>');">
                     <input type="hidden" name="action" value="cc_update_github">
                     <?php wp_nonce_field('cc_update_github'); ?>
                     <?php submit_button(__('Update from GitHub', 'cookie-consent'), 'secondary', 'cc_update_submit', false); ?>
                 </form>
                 <p class="description" style="margin-top:6px;">
-                    <?php _e('“Scan Cookies” lists cookies found on your homepage below. “Update from GitHub” pulls the latest plugin version.', 'cookie-consent'); ?>
+                    <?php _e('“Scan Cookies” loads your homepage in the browser and records the cookies it actually sets (including JavaScript ones). “Update from GitHub” pulls the latest plugin version.', 'cookie-consent'); ?>
                     <?php echo ' ' . esc_html(sprintf(__('Current version: %s', 'cookie-consent'), CC_VERSION)); ?>
                 </p>
             </div>
+            <script>
+            (function(){
+                var btn = document.getElementById('cc-inbrowser-scan');
+                if (!btn) return;
+                var HOME = <?php echo wp_json_encode(home_url('/')); ?>;
+                var AJAX = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
+                var NONCE = <?php echo wp_json_encode(wp_create_nonce('cc_scan_clientside')); ?>;
+                var CCNAME = <?php echo wp_json_encode(isset($this->settings['cookie_name']) ? $this->settings['cookie_name'] : 'cc_cookie'); ?>;
+                function getCookie(n){ var m = ('; ' + document.cookie).split('; ' + n + '='); return m.length === 2 ? m.pop().split(';').shift() : null; }
+                btn.addEventListener('click', function(){
+                    btn.disabled = true; var label = btn.textContent; btn.textContent = '<?php echo esc_js(__('Scanning…', 'cookie-consent')); ?>';
+                    // Temporarily grant full consent so the homepage sets all its cookies during the scan.
+                    var orig = getCookie(CCNAME);
+                    document.cookie = CCNAME + '=' + encodeURIComponent(JSON.stringify({categories:['necessary','analytics','marketing'],timestamp:1})) + ';path=/;max-age=180';
+                    var before = {}; (document.cookie||'').split(';').forEach(function(c){ before[c.split('=')[0].trim()] = 1; });
+                    var ifr = document.createElement('iframe');
+                    ifr.style.cssText = 'position:absolute;left:-9999px;width:10px;height:10px;border:0;';
+                    ifr.src = HOME + (HOME.indexOf('?') > -1 ? '&' : '?') + '_ccscan=' + Date.now();
+                    document.body.appendChild(ifr);
+                    setTimeout(function(){
+                        var names = [];
+                        try { names = (ifr.contentWindow.document.cookie || '').split(';').map(function(c){ return c.split('=')[0].trim(); }).filter(Boolean); } catch(e){}
+                        (document.cookie||'').split(';').forEach(function(c){ var n = c.split('=')[0].trim(); if (n && names.indexOf(n) < 0) names.push(n); });
+                        try { document.body.removeChild(ifr); } catch(e){}
+                        // Restore the admin's real consent state.
+                        if (orig === null) { document.cookie = CCNAME + '=;path=/;max-age=0'; }
+                        else { document.cookie = CCNAME + '=' + orig + ';path=/'; }
+                        // Clean up tracking cookies that this scan caused to be set.
+                        names.forEach(function(n){ if (!before[n] && n !== CCNAME) { document.cookie = n + '=;path=/;max-age=0'; document.cookie = n + '=;path=/;domain=.' + location.hostname + ';max-age=0'; } });
+                        if (!names.length) { alert('<?php echo esc_js(__('No cookies detected. Your site may block being framed; tell us and we will adjust.', 'cookie-consent')); ?>'); btn.disabled = false; btn.textContent = label; return; }
+                        var body = 'action=cc_scan_clientside&nonce=' + encodeURIComponent(NONCE) + names.map(function(n){ return '&cookies[]=' + encodeURIComponent(n); }).join('');
+                        fetch(AJAX, { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body })
+                            .then(function(r){ return r.json(); })
+                            .then(function(res){ alert((res && res.success ? (res.data.added + ' <?php echo esc_js(__('new cookie(s) added', 'cookie-consent')); ?>') : '<?php echo esc_js(__('Scan failed.', 'cookie-consent')); ?>')); location.reload(); })
+                            .catch(function(){ alert('<?php echo esc_js(__('Scan failed (network).', 'cookie-consent')); ?>'); location.reload(); });
+                    }, 4500);
+                });
+            })();
+            </script>
 
             <form method="post" action="options.php">
                 <?php settings_fields('cc_settings_group'); ?>
