@@ -264,6 +264,15 @@
       }
     });
 
+    // 1b) Always disclose this tool's own consent cookie in its category, even
+    //     before a choice is made (it's set the moment the visitor accepts/denies).
+    const consentName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
+    const consentInfo = classifyCookie(consentName);
+    if (consentInfo.category === categoryKey && !seen[consentName]) {
+      seen[consentName] = 1;
+      list.push({ name: consentName, description: consentInfo.description, duration: consentInfo.duration, stored: true });
+    }
+
     // 2) Cookies that tracking scripts present on the page will set once the
     //    category is accepted (they are blocked until then). Only while the
     //    category is not yet accepted.
