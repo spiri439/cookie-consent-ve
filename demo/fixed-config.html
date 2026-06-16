@@ -1,0 +1,105 @@
+<!--
+  CORRECTED Cookie Consent VE setup for asigurare.infocons.ro
+
+  Replaces the broken inline config currently emitted by the WordPress plugin.
+
+  What was wrong on the live site:
+    1. language.translations had the "ro" key TWICE. JavaScript keeps the last
+       one, which had every string empty -> the banner rendered with no title,
+       no text and blank buttons ("messed up").
+    2. autoShow was false and the modal was rebuilt by hand in onModalReady,
+       which is what caused both the delay and the broken layout.
+    3. A large onModalReady / button-cloning / sessionStorage reload state
+       machine existed only to paper over (1). With correct translations the
+       library renders everything itself, so all of that is deleted here.
+
+  Drop this <script> block in place of the generated one (the umd library tag
+  stays as-is). Edit the Romanian strings to taste.
+-->
+<script src="/wp-content/plugins/wordpress-plugin/cookieconsent.umd.js"></script>
+<script>
+  (function () {
+    function start() {
+      if (typeof CookieConsent === 'undefined') { setTimeout(start, 30); return; }
+
+      CookieConsent.run({
+        mode: 'opt-in',
+        autoShow: true,                 // let the library show the banner immediately
+        manageScriptTags: true,         // activate <script type="text/plain" data-category="..."> on consent
+
+        cookie: {
+          name: 'cc_cookie',
+          expiresAfterDays: 365,
+          path: '/',
+          sameSite: 'Lax',
+          secure: window.location.protocol === 'https:'
+        },
+
+        guiOptions: {
+          consentModal: { layout: 'box', position: 'bottom right' },
+          preferencesModal: { layout: 'box', position: 'left' }
+        },
+
+        categories: {
+          necessary: { enabled: true, readOnly: true },
+          analytics: {
+            autoClear: {
+              reloadPage: true,
+              cookies: [{ name: /^(_ga|_gid|_gat|_gcl_au|__utm|_uet|_dc_gtm|_gac_|_gtm|_ga_|AMP_TOKEN|_vwo)/ }]
+            }
+          },
+          marketing: {
+            autoClear: {
+              reloadPage: true,
+              cookies: [{ name: /^(_fbp|fr|hubspotutk|intercom|tawk|datadog|fbc|_pin|_adroll|_scid|li_at|_li|_linkedin)/ }]
+            }
+          }
+        },
+
+        language: {
+          default: 'ro',
+          translations: {
+            ro: {
+              consentModal: {
+                title: '🍪 Folosim cookie-uri',
+                description: 'Folosim cookie-uri pentru a îmbunătăți experiența ta de navigare și a analiza traficul. Apasă „Acceptă toate" pentru a consimți sau „Setări" pentru a-ți gestiona preferințele.',
+                acceptAllBtn: 'Acceptă toate',
+                acceptNecessaryBtn: 'Respinge toate',
+                showPreferencesBtn: 'Setări'
+              },
+              preferencesModal: {
+                title: 'Preferințe cookie-uri',
+                acceptAllBtn: 'Acceptă toate',
+                acceptNecessaryBtn: 'Respinge toate',
+                savePreferencesBtn: 'Salvează preferințele',
+                closeIconLabel: 'Închide',
+                sections: [
+                  {
+                    title: 'Utilizarea cookie-urilor',
+                    description: 'Folosim cookie-uri pentru funcționarea site-ului și, cu acordul tău, pentru analiză și marketing.'
+                  },
+                  {
+                    title: 'Cookie-uri strict necesare',
+                    description: 'Întotdeauna active. Necesare pentru funcționarea de bază a site-ului.',
+                    linkedCategory: 'necessary'
+                  },
+                  {
+                    title: 'Cookie-uri de analiză',
+                    description: 'Ne ajută să înțelegem cum este folosit site-ul, pentru a-l îmbunătăți.',
+                    linkedCategory: 'analytics'
+                  },
+                  {
+                    title: 'Cookie-uri de marketing',
+                    description: 'Folosite pentru a-ți afișa conținut și reclame relevante.',
+                    linkedCategory: 'marketing'
+                  }
+                ]
+              }
+            }
+          }
+        }
+      });
+    }
+    start();
+  })();
+</script>

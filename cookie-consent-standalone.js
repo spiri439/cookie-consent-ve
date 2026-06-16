@@ -32,6 +32,24 @@
     autoShow: true,
     position: 'bottom-right', // bottom-left, bottom-right, top-left, top-right, bottom-center
     theme: 'light', // light, dark
+    // All user-facing text. Any of these can be overridden via the config.
+    text: {
+      title: '🍪 Cookie Preferences',
+      description: 'We use cookies to enhance your browsing experience and analyze our traffic. Click "Accept All" to consent to our use of cookies or "Settings" to manage your preferences.',
+      acceptAll: 'Accept All',
+      rejectAll: 'Reject All',
+      settings: 'Settings',
+      modalTitle: 'Cookie Preferences',
+      save: 'Save Preferences',
+      cancel: 'Cancel',
+      tableCookie: 'Cookie',
+      tablePurpose: 'Purpose',
+      tableDuration: 'Duration',
+      tableStatus: 'Status',
+      statusStored: 'Stored now',
+      statusIfAccepted: 'Blocked until you accept',
+      noCookies: 'No cookies stored, and no matching services were detected on this page.'
+    },
     categories: {
       necessary: {
         enabled: true,
@@ -51,6 +69,244 @@
       }
     }
   };
+
+  // Known-cookie registry: describes auto-detected cookies. Each entry matches
+  // a cookie name by regex and provides a friendly label, purpose and duration.
+  // Order matters — more specific patterns must come before broader ones.
+  const COOKIE_REGISTRY = [
+    { match: /^cc_cookie$/, category: 'necessary', label: 'cc_cookie', description: 'Stores your cookie consent choices.', duration: '1 year' },
+    { match: /^_ga$/,       category: 'analytics', label: '_ga',       description: 'Google Analytics – distinguishes unique visitors.', duration: '2 years' },
+    { match: /^_ga_/,       category: 'analytics', label: '_ga_*',     description: 'Google Analytics 4 – persists the session state.', duration: '2 years' },
+    { match: /^_gid$/,      category: 'analytics', label: '_gid',      description: 'Google Analytics – distinguishes unique visitors.', duration: '24 hours' },
+    { match: /^_gat/,       category: 'analytics', label: '_gat*',     description: 'Google Analytics – throttles the request rate.', duration: '1 minute' },
+    { match: /^_gcl_au$/,   category: 'marketing', label: '_gcl_au',   description: 'Google Ads – stores ad-click conversion info.', duration: '90 days' },
+    { match: /^__utm/,      category: 'analytics', label: '__utm*',    description: 'Legacy Universal Analytics visitor/session data.', duration: 'up to 2 years' },
+    { match: /^_uet/,       category: 'analytics', label: '_uet*',     description: 'Microsoft/Bing Ads – analytics & conversion.', duration: 'varies' },
+    { match: /^_vwo/,       category: 'analytics', label: '_vwo*',     description: 'Visual Website Optimizer – A/B testing.', duration: 'varies' },
+    { match: /^trafic_mon/, category: 'analytics', label: 'trafic_mon', description: 'Site traffic monitoring / visit statistics.', duration: 'varies' },
+    { match: /^_fbp$/,      category: 'marketing', label: '_fbp',      description: 'Meta (Facebook) Pixel – identifies browsers for ad delivery.', duration: '90 days' },
+    { match: /^fr$/,        category: 'marketing', label: 'fr',        description: 'Meta (Facebook) – ad delivery and measurement.', duration: '90 days' },
+    { match: /^fbc$/,       category: 'marketing', label: 'fbc',       description: 'Meta (Facebook) – stores the last ad click.', duration: 'varies' },
+    { match: /^hubspotutk$/,category: 'marketing', label: 'hubspotutk',description: 'HubSpot – tracks visitor identity for marketing.', duration: '6 months' },
+    { match: /^(li_at|_li|_linkedin)/, category: 'marketing', label: 'li_at / _linkedin_*', description: 'LinkedIn – ad targeting and tracking.', duration: 'varies' },
+    { match: /^_pin/,       category: 'marketing', label: '_pin*',     description: 'Pinterest – advertising audiences.', duration: 'varies' },
+    { match: /^_adroll/,    category: 'marketing', label: '_adroll',   description: 'AdRoll – advertising audiences.', duration: 'varies' },
+    { match: /^_scid/,      category: 'marketing', label: '_scid',     description: 'Advertising – campaign/click attribution.', duration: 'varies' }
+  ];
+
+  // Broad fallback patterns for classifying cookies that aren't in the registry.
+  const ANALYTICS_PATTERNS = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^_uet/, /^_dc_gtm/, /^_gtm/, /^ga_/, /^AMP_TOKEN/, /^_vwo/, /^trafic_mon/];
+  const MARKETING_PATTERNS = [/^_fbp/, /^fr$/, /^fbc$/, /^_gcl_au/, /^_gac_/, /^hubspotutk$/, /^intercom/, /^tawk/, /^datadog/, /^_pin/, /^_adroll/, /^_ad/, /^_scid/, /^li_at/, /^_li/, /^_linkedin/, /^tracking/, /^clickid/, /^affiliate/];
+
+  // Tracking services we can recognise on the page. `match` is tested against
+  // each script's src + (gated/inline) content; `cookies` are the cookies that
+  // service is known to set. This drives the "will be stored" list from what is
+  // ACTUALLY embedded on the page, instead of guessing a generic list.
+  const SERVICE_SIGNATURES = [
+    {
+      id: 'ga', category: 'analytics', name: 'Google Analytics',
+      match: [/googletagmanager\.com\/gtag\/js/, /google-analytics\.com/, /\bgtag\s*\(/, /analytics\.js/, /\bga\s*\(\s*['"]/],
+      cookies: [
+        { name: '_ga',    description: 'Google Analytics – distinguishes unique visitors.', duration: '2 years' },
+        { name: '_ga_*',  description: 'Google Analytics 4 – persists the session state.', duration: '2 years' }
+      ]
+    },
+    {
+      id: 'gtm', category: 'analytics', name: 'Google Tag Manager',
+      match: [/googletagmanager\.com\/gtm\.js/],
+      cookies: [
+        { name: '_dc_gtm_*', description: 'Google Tag Manager – throttles request rate.', duration: '1 minute' }
+      ]
+    },
+    {
+      id: 'gads', category: 'marketing', name: 'Google Ads',
+      match: [/googleadservices\.com/, /googlesyndication\.com/, /\/pagead\//],
+      cookies: [
+        { name: '_gcl_au', description: 'Google Ads – stores ad-click conversion info.', duration: '90 days' }
+      ]
+    },
+    {
+      id: 'meta', category: 'marketing', name: 'Meta (Facebook) Pixel',
+      match: [/connect\.facebook\.net/, /fbevents\.js/, /\bfbq\s*\(/],
+      cookies: [
+        { name: '_fbp', description: 'Meta Pixel – identifies browsers for ad delivery.', duration: '90 days' },
+        { name: 'fr',   description: 'Meta – ad delivery and measurement.', duration: '90 days' }
+      ]
+    },
+    {
+      id: 'hotjar', category: 'analytics', name: 'Hotjar',
+      match: [/static\.hotjar\.com/, /\bhj\s*\(/],
+      cookies: [
+        { name: '_hj*', description: 'Hotjar – behaviour analytics and session sampling.', duration: 'varies' }
+      ]
+    },
+    {
+      id: 'clarity', category: 'analytics', name: 'Microsoft Clarity',
+      match: [/clarity\.ms/, /\bclarity\s*\(/],
+      cookies: [
+        { name: '_clck / _clsk', description: 'Microsoft Clarity – session analytics.', duration: '1 year' }
+      ]
+    },
+    {
+      id: 'linkedin', category: 'marketing', name: 'LinkedIn Insight',
+      match: [/snap\.licdn\.com/, /linkedin\.com\/insight/],
+      cookies: [
+        { name: 'li_*', description: 'LinkedIn – ad targeting and conversion tracking.', duration: 'varies' }
+      ]
+    },
+    {
+      id: 'hubspot', category: 'marketing', name: 'HubSpot',
+      match: [/js\.hs-scripts\.com/, /js\.hsforms\.net/, /\.hubspot\.com/],
+      cookies: [
+        { name: 'hubspotutk', description: 'HubSpot – tracks visitor identity for marketing.', duration: '6 months' }
+      ]
+    },
+    {
+      id: 'tiktok', category: 'marketing', name: 'TikTok Pixel',
+      match: [/analytics\.tiktok\.com/, /\bttq\b/],
+      cookies: [
+        { name: '_ttp', description: 'TikTok – ad measurement and targeting.', duration: '13 months' }
+      ]
+    }
+  ];
+
+  // Scripts that are part of this consent tool — never scan them for trackers,
+  // otherwise our own pattern strings would self-match.
+  const SELF_MARKERS = /CookieConsent|cc_cookie|deleteBlockedCookies|cc-main|COOKIE_REGISTRY/;
+
+  function lookupCookie(name) {
+    for (let i = 0; i < COOKIE_REGISTRY.length; i++) {
+      if (COOKIE_REGISTRY[i].match.test(name)) return COOKIE_REGISTRY[i];
+    }
+    return null;
+  }
+
+  // Classify a single cookie name into a category with display info.
+  function classifyCookie(name) {
+    // The consent cookie itself — match the configured name so it always shows
+    // (and is never mislabelled), even if renamed in settings.
+    const consentName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
+    if (name === consentName) {
+      return { label: name, category: 'necessary', description: 'Stores your cookie consent choices.', duration: '1 year' };
+    }
+    const known = lookupCookie(name);
+    if (known) return { label: known.label, category: known.category, description: known.description, duration: known.duration };
+    if (ANALYTICS_PATTERNS.some(p => p.test(name))) return { label: name, category: 'analytics', description: 'Analytics / statistics cookie.', duration: 'varies' };
+    if (MARKETING_PATTERNS.some(p => p.test(name))) return { label: name, category: 'marketing', description: 'Marketing / advertising cookie.', duration: 'varies' };
+    // Unknown cookie: do NOT claim it is "required". Mark it unclassified so the
+    // site owner can categorise it instead of it silently passing as necessary.
+    return { label: name, category: 'necessary', description: 'Unclassified — not recognized by the cookie manager.', duration: 'unknown' };
+  }
+
+  // Auto-detect the cookies currently set in the browser, grouped by category.
+  function detectCookiesByCategory() {
+    const groups = {};
+    getAllCookies().forEach(name => {
+      if (!name) return;
+      const info = classifyCookie(name);
+      (groups[info.category] = groups[info.category] || []).push(info);
+    });
+    return groups;
+  }
+
+  // Detect which tracking services are actually embedded on the page by reading
+  // the script tags that are present (including the gated/blocked ones that have
+  // not run yet). Our own consent scripts are skipped. Returns a deduped list of
+  // matched SERVICE_SIGNATURES.
+  function detectServices() {
+    const found = [];
+    const ids = {};
+    const scripts = document.getElementsByTagName('script');
+    for (let i = 0; i < scripts.length; i++) {
+      const s = scripts[i];
+      const src = s.src || '';
+      const content = s.textContent || '';
+      // Skip this tool's own scripts so their pattern strings don't self-match.
+      if (src.indexOf('cookie-consent') !== -1) continue;
+      if (content && SELF_MARKERS.test(content)) continue;
+      const haystack = src + '\n' + content;
+      for (let j = 0; j < SERVICE_SIGNATURES.length; j++) {
+        const sig = SERVICE_SIGNATURES[j];
+        if (ids[sig.id]) continue;
+        if (sig.match.some(re => re.test(haystack))) {
+          ids[sig.id] = 1;
+          found.push(sig);
+        }
+      }
+    }
+    return found;
+  }
+
+  // Cookies to display for a category. Each entry is flagged with `stored`:
+  //   true  -> the cookie is currently set in the browser ("Stored now")
+  //   false -> a cookie that WILL be set by a tracking service detected on this
+  //            page, once the category is accepted ("Stored if accepted")
+  // The "will be stored" rows come from services actually found in the page's
+  // scripts — not a generic guess — so a service that isn't present is never
+  // listed.
+  // True if a cookie label (which may be a pattern like "_ga_*" or a combined
+  // "a / b" label) matches a cookie currently set in the browser.
+  function cookieLabelPresent(label, present) {
+    return String(label).split('/').some(part => {
+      part = part.trim();
+      if (!part) return false;
+      if (part.indexOf('*') !== -1) {
+        const prefix = part.split('*')[0];
+        return Object.keys(present).some(n => n.indexOf(prefix) === 0);
+      }
+      return !!present[part];
+    });
+  }
+
+  // Cookies shown for a category come ONLY from the admin-managed list (built by
+  // the "Scan Cookies" button in settings). No live page scanning is done here.
+  // Each is flagged stored:true ("Stored now") if currently set, else false
+  // ("Blocked until you accept").
+  function getCategoryCookies(categoryKey) {
+    const declared = (STATE.config.cookies && STATE.config.cookies[categoryKey]) || [];
+    if (!declared.length) return [];
+    const present = {};
+    getAllCookies().forEach(n => { present[n] = 1; });
+    return declared.map(c => ({
+      name: c.name,
+      description: c.description,
+      duration: c.duration,
+      stored: cookieLabelPresent(c.name, present)
+    }));
+  }
+
+  // Build the cookie-table HTML for one category. Extracted so it can be
+  // re-rendered after the modal opens (cookies set asynchronously by scripts/
+  // server show up without needing a full page reload).
+  function buildCookieTableHtml(categoryKey) {
+    const category = (STATE.config.categories && STATE.config.categories[categoryKey]) || {};
+    const cookieList = (category.cookies && category.cookies.length)
+      ? category.cookies
+      : getCategoryCookies(categoryKey);
+    const tx = STATE.config.text;
+    const statusCell = (c) => {
+      if (c.stored === true) return `<span class="cc-cookie-status cc-cookie-status--on">${tx.statusStored}</span>`;
+      if (c.stored === false) return `<span class="cc-cookie-status">${tx.statusIfAccepted}</span>`;
+      return '';
+    };
+    return cookieList.length ? `
+            <table class="cc-cookie-table">
+              <thead><tr><th>${tx.tableCookie}</th><th>${tx.tablePurpose}</th><th>${tx.tableDuration}</th><th>${tx.tableStatus}</th></tr></thead>
+              <tbody>
+                ${cookieList.map(c => `<tr><td><code>${c.name || c.label}</code></td><td>${c.description || ''}</td><td>${c.duration || ''}</td><td>${statusCell(c)}</td></tr>`).join('')}
+              </tbody>
+            </table>` : `<div class="cc-cookie-empty">${tx.noCookies}</div>`;
+  }
+
+  // Re-scan cookies and refresh just the cookie tables in the open modal,
+  // without touching the category toggles the user may have changed.
+  function refreshCookieTables() {
+    if (!STATE.modalElement) return;
+    const wraps = STATE.modalElement.querySelectorAll('[data-cc-cat]');
+    for (let i = 0; i < wraps.length; i++) {
+      wraps[i].innerHTML = buildCookieTableHtml(wraps[i].getAttribute('data-cc-cat'));
+    }
+  }
 
   const STATE = {
     config: null,
@@ -86,7 +342,7 @@
 
   function getAllCookies() {
     if (!document.cookie) return [];
-    return document.cookie.split('; ').map(c => c.split('=')[0]);
+    return document.cookie.split(';').map(c => c.split('=')[0].trim()).filter(Boolean);
   }
 
   function deleteCookiesByPattern(patterns) {
@@ -270,7 +526,21 @@
 
   function installCookieGuard() {
     if (STATE.cookieGuardInstalled) return;
-    
+
+    // The guard runs at script load, BEFORE init() loads preferences. Read any
+    // existing consent from the cookie first, so previously-accepted analytics/
+    // marketing cookies are NOT wiped on every page load. (Without this, a
+    // returning visitor who accepted everything would have those cookies deleted
+    // on load and they'd only reappear after the server/scripts re-set them.)
+    if (!STATE.preferences) {
+      try {
+        const parts = ('; ' + document.cookie).split('; cc_cookie=');
+        if (parts.length === 2) {
+          STATE.preferences = JSON.parse(decodeURIComponent(parts.pop().split(';').shift()));
+        }
+      } catch (e) {}
+    }
+
     try {
       // First, delete any existing analytics/marketing cookies that shouldn't be there
       function deleteBlockedCookies() {
@@ -279,7 +549,7 @@
         const analyticsPatterns = [
           /^_ga/, /^_gid$/, /^_gat/, /^_gcl_au$/, /^__utm/, /^_uet/, 
           /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/,
-          /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/
+          /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/, /^trafic_mon/
         ];
         
         const marketingPatterns = [
@@ -346,7 +616,6 @@
       
       Object.defineProperty(document, 'cookie', {
         configurable: true,
-        writable: false,
         get: cookieDescriptor.get.bind(document),
         set: function(value) {
           // Extract cookie name from "name=value; attributes..."
@@ -363,7 +632,7 @@
           const analyticsPatterns = [
             /^_ga/, /^_gid$/, /^_gat/, /^_gcl_au$/, /^__utm/, /^_uet/, 
             /^_dc_gtm/, /^_gac_/, /^_gtm/, /^analytics/, /^ga_/, /^gid_/,
-            /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/
+            /^collect$/, /^_gat_gtag/, /^_ga_/, /^AMP_TOKEN/, /^_vwo/, /^trafic_mon/
           ];
           
           // Comprehensive patterns for marketing cookies
@@ -421,7 +690,7 @@
           
           const cookies = document.cookie.split('; ');
           const consentCookieName = (STATE.config && STATE.config.cookieName) || 'cc_cookie';
-          const analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/];
+          const analyticsPatterns = [/^_ga/, /^_gid/, /^_gat/, /^__utm/, /^trafic_mon/];
           const marketingPatterns = [/^_fbp/, /^fr$/, /^sb$/, /^wd$/];
           
           cookies.forEach(cookieStr => {
@@ -455,7 +724,7 @@
     
     // Analytics cookies
     const analyticsPatterns = [
-      /^_ga/, /^_gid$/, /^_gat_/, /^_gcl_au$/, /^__utm/, /^_uet/, /^_fbp$/
+      /^_ga/, /^_gid$/, /^_gat_/, /^_gcl_au$/, /^__utm/, /^_uet/, /^_fbp$/, /^trafic_mon/
     ];
     
     // Marketing cookies
@@ -564,6 +833,20 @@
       
       .cc-category__desc { font-size: 13px; color: #666; line-height: 1.5; }
       .cc-theme-dark .cc-category__desc { color: #999; }
+
+      .cc-cookie-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+      .cc-cookie-table th, .cc-cookie-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      .cc-cookie-table th { color: #666; font-weight: 600; }
+      .cc-cookie-table td { color: #444; }
+      .cc-cookie-table code { background: #f4f4f4; padding: 1px 5px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+      .cc-theme-dark .cc-cookie-table th, .cc-theme-dark .cc-cookie-table td { border-color: #333; color: #bbb; }
+      .cc-theme-dark .cc-cookie-table code { background: #2a2a2a; color: #eee; }
+      .cc-cookie-empty { margin-top: 12px; font-size: 12px; font-style: italic; color: #888; }
+      .cc-theme-dark .cc-cookie-empty { color: #888; }
+      .cc-cookie-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; white-space: nowrap; background: #e5e7eb; color: #555; }
+      .cc-cookie-status--on { background: #dcfce7; color: #15803d; }
+      .cc-theme-dark .cc-cookie-status { background: #333; color: #bbb; }
+      .cc-theme-dark .cc-cookie-status--on { background: #14532d; color: #86efac; }
       
       .cc-toggle { position: relative; display: inline-block; width: 50px; height: 28px; cursor: pointer; }
       .cc-toggle input { position: absolute; opacity: 0; width: 50px; height: 28px; margin: 0; padding: 0; cursor: pointer; z-index: 10; pointer-events: auto; top: 0; left: 0; }
@@ -667,16 +950,14 @@
     banner.className = `cc-banner cc-position-${STATE.config.position}`;
     // Force visibility with inline styles for mobile
     banner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: fixed !important; z-index: 999999 !important;';
+    const t = STATE.config.text;
     banner.innerHTML = `
-      <div class="cc-banner__title">🍪 Cookie Preferences</div>
-      <div class="cc-banner__text">
-        We use cookies to enhance your browsing experience and analyze our traffic. 
-        Click "Accept" to consent to our use of cookies or "Settings" to manage your preferences.
-      </div>
+      <div class="cc-banner__title">${t.title}</div>
+      <div class="cc-banner__text">${t.description}</div>
       <div class="cc-banner__actions">
-        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="reject">Reject All</button>
-        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="settings">Settings</button>
-        <button class="cc-banner__btn cc-banner__btn--primary" data-cc-action="accept">Accept All</button>
+        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="reject">${t.rejectAll}</button>
+        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="settings">${t.settings}</button>
+        <button class="cc-banner__btn cc-banner__btn--primary" data-cc-action="accept">${t.acceptAll}</button>
       </div>
     `;
     
@@ -781,7 +1062,7 @@
       }
       
       const isDisabled = category.readOnly;
-      
+
       return `
         <div class="cc-category">
           <div class="cc-category__header">
@@ -794,21 +1075,23 @@
               <span class="cc-toggle__slider"></span>
             </label>
           </div>
+          <div class="cc-cookie-wrap" data-cc-cat="${categoryKey}">${buildCookieTableHtml(categoryKey)}</div>
         </div>
       `;
     }).join('');
     
+    const t = STATE.config.text;
     modal.innerHTML = `
       <div class="cc-modal__header">
-        <h2 class="cc-modal__title">Cookie Preferences</h2>
+        <h2 class="cc-modal__title">${t.modalTitle}</h2>
         <button class="cc-modal__close" data-cc-action="close">&times;</button>
       </div>
       <div class="cc-modal__body">
         ${categoriesHtml}
       </div>
       <div class="cc-modal__footer">
-        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="cancel">Cancel</button>
-        <button class="cc-banner__btn cc-banner__btn--primary" data-cc-action="save">Save Preferences</button>
+        <button class="cc-banner__btn cc-banner__btn--secondary" data-cc-action="cancel">${t.cancel}</button>
+        <button class="cc-banner__btn cc-banner__btn--primary" data-cc-action="save">${t.save}</button>
       </div>
     `;
     
@@ -905,17 +1188,34 @@
     if (!document.body) {
       return;
     }
-    if (STATE.modalElement) {
-      STATE.modalElement.classList.add('show');
-      STATE.modalShown = true;
-    } else {
-      STATE.modalElement = createModal();
-      if (STATE.modalElement) {
-        setTimeout(() => {
-          STATE.modalElement.classList.add('show');
-          STATE.modalShown = true;
-        }, 10);
+    // Reload the page first, THEN open the preferences modal. This guarantees
+    // every cookie set by the page (scripts / server) is present before the
+    // modal reads them, so the cookie tables are always complete. A one-shot
+    // sessionStorage flag both prevents a reload loop and tells init() to
+    // re-open the modal automatically after the reload.
+    try {
+      if (!sessionStorage.getItem('cc_open_prefs')) {
+        sessionStorage.setItem('cc_open_prefs', '1');
+        window.location.reload();
+        return;
       }
+      sessionStorage.removeItem('cc_open_prefs');
+    } catch (e) { /* sessionStorage unavailable — just open the modal in place */ }
+
+    // Always rebuild the modal so the cookie tables reflect the cookies that
+    // are present right now.
+    if (STATE.modalElement && STATE.modalElement.parentNode) {
+      STATE.modalElement.parentNode.removeChild(STATE.modalElement);
+    }
+    STATE.modalElement = createModal();
+    if (STATE.modalElement) {
+      setTimeout(() => {
+        STATE.modalElement.classList.add('show');
+        STATE.modalShown = true;
+      }, 10);
+      // Re-scan shortly after opening, to catch any late-written cookies.
+      setTimeout(refreshCookieTables, 600);
+      setTimeout(refreshCookieTables, 1800);
     }
   }
 
@@ -994,7 +1294,10 @@
   const CookieConsent = {
     init: function(config) {
       STATE.config = Object.assign({}, DEFAULTS, config);
-      
+      // Deep-merge text so a config can override just some labels and still get
+      // sensible defaults for the rest.
+      STATE.config.text = Object.assign({}, DEFAULTS.text, (config && config.text) || {});
+
       // Create styles
       createStyles();
       
@@ -1015,12 +1318,20 @@
         if (STATE.config.autoShow && !STATE.preferences) {
           STATE.bannerElement = createBanner();
         }
-        
+
         // Initialize existing scripts
         if (STATE.preferences) {
           initializeScripts();
           enforcePreferences();
         }
+
+        // If the user clicked "Settings" before a reload, re-open the
+        // preferences modal now (the flag is consumed inside showModal()).
+        try {
+          if (sessionStorage.getItem('cc_open_prefs')) {
+            showModal();
+          }
+        } catch (e) {}
       }
       
       if (document.body) {

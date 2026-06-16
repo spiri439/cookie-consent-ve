@@ -9,7 +9,7 @@ GDPR-compliant cookie consent with **three deployment options**:
 
 1. **Standalone** - Add to any website with a simple `<script>` tag
 2. **WordPress Plugin** - Install as a WordPress plugin
-3. **Official Library Demo** - Example using orestbida/cookieconsent v3
+3. **Library Demo** - Reference integration using the bundled consent engine
 
 ---
 
@@ -74,12 +74,12 @@ cookie-consent-ve/
 │   ├── cookie-consent.php        # Main plugin file
 │   ├── cookie-consent.js         # Cookie consent logic
 │   └── README.md                 # Plugin documentation
-├── demo/                          # Official library demo
+├── demo/                          # Library demo
 │   ├── index.html                # Main demo page
 │   └── settings.html             # Settings portal
 ├── src/cc.js                      # Custom experiment
 ├── styles/cc.css                  # Custom styles
-├── cookieconsent/                 # Official library
+├── cookieconsent/                 # Bundled consent engine
 └── INSTALLATION.md                # Detailed installation guide
 ```
 
@@ -93,7 +93,7 @@ cookie-consent-ve/
 - **Auto-Gating Demo**: See `auto-gate-demo.html` - Test automatic blocking
 - **Standalone**: See `standalone-example.html` - Working demo
 - **WordPress**: See `wordpress-plugin/README.md` - Plugin guide
-- **Official Demo**: See `demo/` - orestbida/cookieconsent examples
+- **Library Demo**: See `demo/` - consent engine integration examples
 
 ---
 
@@ -111,10 +111,10 @@ cookie-consent-ve/
 - Blog sites
 - Easy admin configuration
 
-### Official Library Demo
+### Library Demo
 - Reference implementation
 - Testing & development
-- Learning the library
+- Learning the consent engine
 
 ---
 
