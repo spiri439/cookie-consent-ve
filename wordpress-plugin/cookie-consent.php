@@ -3,7 +3,7 @@
  * Plugin Name: Cookie Consent VE
  * Plugin URI: https://vesrl.ro
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.5.0
+ * Version: 1.5.1
  * Author: VE
  * Author URI: https://vesrl.ro
  * License: MIT
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CC_VERSION', '1.5.0');
+define('CC_VERSION', '1.5.1');
 define('CC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CC_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -150,6 +150,17 @@ class CookieConsent_Plugin {
         );
     }
 
+    /**
+     * Cookies the scanner ignores: WordPress's own admin/login/session cookies
+     * that only exist for logged-in users, so the admin running the scan does
+     * not pollute the public list with their own session cookies.
+     */
+    public function is_ignored_cookie($name) {
+        $ignore = array('/^wordpress_/', '/^wp-settings/', '/^wp_lang$/', '/^comment_author/', '/^wordpress_test_cookie$/');
+        foreach ($ignore as $re) { if (preg_match($re, $name)) return true; }
+        return false;
+    }
+
     /** Best-effort category for a cookie name found via Set-Cookie. */
     public function guess_category($name) {
         $analytics = array('/^_ga/', '/^_gid/', '/^_gat/', '/^__utm/', '/^_uet/', '/^_vwo/', '/^_dc_gtm/', '/^trafic/', '/^_pk_/', '/^_hj/');
@@ -182,7 +193,7 @@ class CookieConsent_Plugin {
         if (!empty($setc)) {
             foreach ((array) $setc as $line) {
                 $name = trim(strtok($line, '='));
-                if ($name === '' || isset($found[$name])) continue;
+                if ($name === '' || isset($found[$name]) || $this->is_ignored_cookie($name)) continue;
                 $found[$name] = array('name' => $name, 'category' => $this->guess_category($name), 'purpose' => 'Set by the website server.', 'duration' => '', 'source' => 'server');
             }
         }
@@ -371,7 +382,7 @@ class CookieConsent_Plugin {
         $added = 0;
         foreach ($names as $raw) {
             $name = sanitize_text_field(wp_unslash($raw));
-            if ($name === '' || isset($by_name[$name])) continue;
+            if ($name === '' || isset($by_name[$name]) || $this->is_ignored_cookie($name)) continue;
             list($cat, $purpose, $duration) = $this->describe_cookie($name);
             $by_name[$name] = array('name' => $name, 'category' => $cat, 'purpose' => $purpose, 'duration' => $duration, 'source' => 'browser');
             $added++;
@@ -880,7 +891,7 @@ class CookieConsent_Plugin {
         $cookies = array('necessary' => array(), 'analytics' => array(), 'marketing' => array());
         if (!empty($this->settings['cookies']) && is_array($this->settings['cookies'])) {
             foreach ($this->settings['cookies'] as $c) {
-                if (empty($c['name'])) continue;
+                if (empty($c['name']) || $this->is_ignored_cookie($c['name'])) continue;
                 $cat = (isset($c['category']) && isset($cookies[$c['category']])) ? $c['category'] : 'necessary';
                 $cookies[$cat][] = array(
                     'name' => $c['name'],
