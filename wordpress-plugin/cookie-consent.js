@@ -198,11 +198,15 @@
     return { label: name, category: 'necessary', description: 'Unclassified — not recognized by the cookie manager.', duration: 'unknown' };
   }
 
+  // WordPress admin/login cookies — present only for logged-in users, never for
+  // visitors, so they are not shown in the modal.
+  const WP_ADMIN_COOKIES = /^(wordpress_|wp-settings)/;
+
   // Auto-detect the cookies currently set in the browser, grouped by category.
   function detectCookiesByCategory() {
     const groups = {};
     getAllCookies().forEach(name => {
-      if (!name) return;
+      if (!name || WP_ADMIN_COOKIES.test(name)) return;
       const info = classifyCookie(name);
       (groups[info.category] = groups[info.category] || []).push(info);
     });
@@ -244,35 +248,39 @@
   // The "will be stored" rows come from services actually found in the page's
   // scripts — not a generic guess — so a service that isn't present is never
   // listed.
-  // True if a cookie label (which may be a pattern like "_ga_*" or a combined
-  // "a / b" label) matches a cookie currently set in the browser.
-  function cookieLabelPresent(label, present) {
-    return String(label).split('/').some(part => {
-      part = part.trim();
-      if (!part) return false;
-      if (part.indexOf('*') !== -1) {
-        const prefix = part.split('*')[0];
-        return Object.keys(present).some(n => n.indexOf(prefix) === 0);
-      }
-      return !!present[part];
-    });
-  }
-
-  // Cookies shown for a category come ONLY from the admin-managed list (built by
-  // the "Scan Cookies" button in settings). No live page scanning is done here.
-  // Each is flagged stored:true ("Stored now") if currently set, else false
-  // ("Blocked until you accept").
+  // Cookies shown for a category, detected automatically from the page:
+  //   stored:true  -> the cookie is set in the browser now ("Stored now")
+  //   stored:false -> a cookie a tracking script on the page will set, currently
+  //                   blocked until consent ("Blocked until you accept")
   function getCategoryCookies(categoryKey) {
-    const declared = (STATE.config.cookies && STATE.config.cookies[categoryKey]) || [];
-    if (!declared.length) return [];
-    const present = {};
-    getAllCookies().forEach(n => { present[n] = 1; });
-    return declared.map(c => ({
-      name: c.name,
-      description: c.description,
-      duration: c.duration,
-      stored: cookieLabelPresent(c.name, present)
-    }));
+    const seen = {};
+    const list = [];
+
+    // 1) Cookies actually set in the browser right now.
+    (detectCookiesByCategory()[categoryKey] || []).forEach(c => {
+      if (!seen[c.label]) {
+        seen[c.label] = 1;
+        list.push({ name: c.label, description: c.description, duration: c.duration, stored: true });
+      }
+    });
+
+    // 2) Cookies that tracking scripts present on the page will set once the
+    //    category is accepted (they are blocked until then). Only while the
+    //    category is not yet accepted.
+    const accepted = !!(STATE.preferences && STATE.preferences.categories &&
+                        STATE.preferences.categories.indexOf(categoryKey) !== -1);
+    if (!accepted) {
+      detectServices().forEach(svc => {
+        if (svc.category !== categoryKey) return;
+        svc.cookies.forEach(ck => {
+          if (!seen[ck.name]) {
+            seen[ck.name] = 1;
+            list.push({ name: ck.name, description: ck.description, duration: ck.duration, stored: false });
+          }
+        });
+      });
+    }
+    return list;
   }
 
   // Build the cookie-table HTML for one category. Extracted so it can be

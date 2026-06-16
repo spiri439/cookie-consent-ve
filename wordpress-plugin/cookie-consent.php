@@ -43,13 +43,6 @@ class CookieConsent_Plugin {
         // Admin "Update from GitHub" action.
         add_action('admin_post_cc_update_github', array($this, 'handle_github_update'));
 
-        // In-browser cookie scanner (reads the REAL cookies on the page, incl.
-        // JS-set ones). Works without the server fetching itself. The server-side
-        // scanner is disabled — it failed on hosts that block loopback requests.
-        add_action('admin_bar_menu', array($this, 'admin_bar_node'), 100);
-        add_action('wp_footer', array($this, 'admin_bar_scan_script'), 100);
-        add_action('wp_ajax_cc_scan_clientside', array($this, 'ajax_scan_clientside'));
-
         // Load settings, merged over defaults so every top-level key always
         // exists (prevents the settings page from erroring on sites upgraded
         // from an older version whose saved options lack newer keys).
@@ -106,134 +99,6 @@ class CookieConsent_Plugin {
             )
         );
         return isset($t[$lang]) ? $t[$lang] : $t['en'];
-    }
-
-    /** Known tracking scripts -> the cookies they set (used by the scanner). */
-    public function tracking_signatures() {
-        return array(
-            array('match' => array('googletagmanager.com/gtag/js', 'google-analytics.com', 'gtag('), 'category' => 'analytics', 'cookies' => array(
-                array('name' => '_ga', 'purpose' => 'Google Analytics – distinguishes unique visitors.', 'duration' => '2 years'),
-                array('name' => '_ga_*', 'purpose' => 'Google Analytics 4 – persists the session state.', 'duration' => '2 years'),
-                array('name' => '_gid', 'purpose' => 'Google Analytics – distinguishes unique visitors.', 'duration' => '24 hours'),
-            )),
-            array('match' => array('googletagmanager.com/gtm.js', 'GTM-'), 'category' => 'analytics', 'cookies' => array(
-                array('name' => '_ga', 'purpose' => 'Google Analytics (via Tag Manager) – distinguishes unique visitors.', 'duration' => '2 years'),
-                array('name' => '_ga_*', 'purpose' => 'Google Analytics 4 (via Tag Manager) – session state.', 'duration' => '2 years'),
-                array('name' => '_gid', 'purpose' => 'Google Analytics (via Tag Manager) – distinguishes visitors.', 'duration' => '24 hours'),
-                array('name' => '_dc_gtm_*', 'purpose' => 'Google Tag Manager – throttles request rate.', 'duration' => '1 minute'),
-            )),
-            array('match' => array('UA-'), 'category' => 'analytics', 'cookies' => array(
-                array('name' => '_gat', 'purpose' => 'Universal Analytics – throttles the request rate.', 'duration' => '1 minute'),
-                array('name' => '__utma', 'purpose' => 'Universal Analytics – visitor/session data.', 'duration' => 'up to 2 years'),
-            )),
-            array('match' => array('googleadservices.com', 'googlesyndication.com'), 'category' => 'marketing', 'cookies' => array(
-                array('name' => '_gcl_au', 'purpose' => 'Google Ads – stores ad-click conversion info.', 'duration' => '90 days'),
-            )),
-            array('match' => array('connect.facebook.net', 'fbevents.js', 'fbq('), 'category' => 'marketing', 'cookies' => array(
-                array('name' => '_fbp', 'purpose' => 'Meta (Facebook) Pixel – identifies browsers for ad delivery.', 'duration' => '90 days'),
-                array('name' => 'fr', 'purpose' => 'Meta (Facebook) – ad delivery and measurement.', 'duration' => '90 days'),
-            )),
-            array('match' => array('static.hotjar.com'), 'category' => 'analytics', 'cookies' => array(
-                array('name' => '_hj*', 'purpose' => 'Hotjar – behaviour analytics and session sampling.', 'duration' => 'varies'),
-            )),
-            array('match' => array('clarity.ms'), 'category' => 'analytics', 'cookies' => array(
-                array('name' => '_clck / _clsk', 'purpose' => 'Microsoft Clarity – session analytics.', 'duration' => '1 year'),
-            )),
-            array('match' => array('snap.licdn.com', 'linkedin.com/insight'), 'category' => 'marketing', 'cookies' => array(
-                array('name' => 'li_*', 'purpose' => 'LinkedIn – ad targeting and conversion tracking.', 'duration' => 'varies'),
-            )),
-            array('match' => array('js.hs-scripts.com', 'js.hsforms.net'), 'category' => 'marketing', 'cookies' => array(
-                array('name' => 'hubspotutk', 'purpose' => 'HubSpot – tracks visitor identity for marketing.', 'duration' => '6 months'),
-            )),
-            array('match' => array('analytics.tiktok.com'), 'category' => 'marketing', 'cookies' => array(
-                array('name' => '_ttp', 'purpose' => 'TikTok – ad measurement and targeting.', 'duration' => '13 months'),
-            )),
-        );
-    }
-
-    /**
-     * Cookies the scanner ignores: WordPress's own admin/login/session cookies
-     * that only exist for logged-in users, so the admin running the scan does
-     * not pollute the public list with their own session cookies.
-     */
-    public function is_ignored_cookie($name) {
-        $ignore = array('/^wordpress_/', '/^wp-settings/', '/^wp_lang$/', '/^comment_author/', '/^wordpress_test_cookie$/');
-        foreach ($ignore as $re) { if (preg_match($re, $name)) return true; }
-        return false;
-    }
-
-    /** Best-effort category for a cookie name found via Set-Cookie. */
-    public function guess_category($name) {
-        $analytics = array('/^_ga/', '/^_gid/', '/^_gat/', '/^__utm/', '/^_uet/', '/^_vwo/', '/^_dc_gtm/', '/^trafic/', '/^_pk_/', '/^_hj/');
-        $marketing = array('/^_fbp/', '/^fr$/', '/^_gcl/', '/^_scid/', '/^li_/', '/^_pin/', '/^hubspot/', '/^_tt/', '/^_uetsid/', '/^_uetvid/');
-        foreach ($analytics as $p) { if (preg_match($p, $name)) return 'analytics'; }
-        foreach ($marketing as $p) { if (preg_match($p, $name)) return 'marketing'; }
-        return 'necessary';
-    }
-
-    /**
-     * Scan the site's front page: collect server Set-Cookie names and tracking
-     * scripts present in the HTML, and return a deduped list of cookies.
-     */
-    public function scan_site_cookies() {
-        $resp = wp_remote_get(home_url('/'), array(
-            'timeout' => 15, 'sslverify' => false, 'redirection' => 3,
-            'user-agent' => 'Mozilla/5.0 (CookieConsentVE Scanner)'
-        ));
-        if (is_wp_error($resp)) {
-            return array('error' => $resp->get_error_message(), 'cookies' => array());
-        }
-        $found = array();
-
-        // The plugin's own consent cookie is always used.
-        $ccname = isset($this->settings['cookie_name']) ? $this->settings['cookie_name'] : 'cc_cookie';
-        $found[$ccname] = array('name' => $ccname, 'category' => 'necessary', 'purpose' => 'Stores your cookie consent choices.', 'duration' => (isset($this->settings['cookie_expiry']) ? intval($this->settings['cookie_expiry']) . ' days' : '1 year'), 'source' => 'plugin');
-
-        // Server-set cookies (e.g. trafic_mon, PHPSESSID).
-        $setc = wp_remote_retrieve_header($resp, 'set-cookie');
-        if (!empty($setc)) {
-            foreach ((array) $setc as $line) {
-                $name = trim(strtok($line, '='));
-                if ($name === '' || isset($found[$name]) || $this->is_ignored_cookie($name)) continue;
-                $found[$name] = array('name' => $name, 'category' => $this->guess_category($name), 'purpose' => 'Set by the website server.', 'duration' => '', 'source' => 'server');
-            }
-        }
-
-        // Tracking scripts in the HTML -> their known cookies.
-        $body = (string) wp_remote_retrieve_body($resp);
-        if ($body !== '') {
-            foreach ($this->tracking_signatures() as $sig) {
-                $hit = false;
-                foreach ($sig['match'] as $m) { if (strpos($body, $m) !== false) { $hit = true; break; } }
-                if (!$hit) continue;
-                foreach ($sig['cookies'] as $ck) {
-                    if (isset($found[$ck['name']])) continue;
-                    $found[$ck['name']] = array('name' => $ck['name'], 'category' => $sig['category'], 'purpose' => $ck['purpose'], 'duration' => $ck['duration'], 'source' => 'script');
-                }
-            }
-        }
-        return array('error' => '', 'cookies' => array_values($found));
-    }
-
-    /** Handle the "Scan Cookies" button: scan, merge into settings, redirect. */
-    public function handle_scan() {
-        if (!current_user_can('manage_options')) wp_die('Insufficient permissions');
-        check_admin_referer('cc_scan_cookies');
-
-        $result = $this->scan_site_cookies();
-        $existing = (isset($this->settings['cookies']) && is_array($this->settings['cookies'])) ? $this->settings['cookies'] : array();
-        $by_name = array();
-        foreach ($existing as $c) { if (!empty($c['name'])) $by_name[$c['name']] = $c; }
-        foreach ($result['cookies'] as $c) { if (!isset($by_name[$c['name']])) $by_name[$c['name']] = $c; } // keep admin edits
-        $this->settings['cookies'] = array_values($by_name);
-        update_option('cc_settings', $this->settings);
-
-        wp_safe_redirect(add_query_arg(array(
-            'page' => 'cookie-consent',
-            'cc_scanned' => count($result['cookies']),
-            'cc_scan_error' => $result['error'] !== '' ? rawurlencode($result['error']) : false,
-        ), admin_url('options-general.php')));
-        exit;
     }
 
     /** GitHub repo the "Update from GitHub" button pulls from. */
@@ -296,103 +161,6 @@ class CookieConsent_Plugin {
         $redirect('success', $new_ver !== '' ? ('Updated to ' . $new_ver) : 'Updated from GitHub.');
     }
 
-    /** Add the "Scan Cookies" button to the admin bar (front-end, admins). */
-    public function admin_bar_node($bar) {
-        if (!current_user_can('manage_options') || is_admin()) return;
-        $bar->add_node(array(
-            'id' => 'cc-scan',
-            'title' => '🍪 ' . __('Scan Cookies', 'cookie-consent'),
-            'href' => '#',
-            'meta' => array('title' => __('Cookie Consent VE — scan this page for cookies', 'cookie-consent')),
-        ));
-    }
-
-    /** JS that powers the admin-bar scan: read this page's cookies, send to AJAX. */
-    public function admin_bar_scan_script() {
-        if (!current_user_can('manage_options') || !is_admin_bar_showing() || is_admin()) return;
-        $nonce = wp_create_nonce('cc_scan_clientside');
-        $ajax = admin_url('admin-ajax.php');
-        $settings_url = admin_url('options-general.php?page=cookie-consent');
-        ?>
-        <script data-no-optimize="1" data-no-defer="1">
-        (function(){
-            var link = document.querySelector('#wp-admin-bar-cc-scan a');
-            if (!link) return;
-            link.addEventListener('click', function(e){
-                e.preventDefault();
-                // Read all JS-accessible cookies currently on this page.
-                var names = (document.cookie || '').split(';').map(function(c){ return c.split('=')[0].trim(); }).filter(Boolean);
-                if (!names.length) { alert(<?php echo wp_json_encode(__('No cookies found on this page. Accept cookies first, then scan again.', 'cookie-consent')); ?>); return; }
-                var body = 'action=cc_scan_clientside&nonce=<?php echo esc_js($nonce); ?>';
-                names.forEach(function(n){ body += '&cookies[]=' + encodeURIComponent(n); });
-                fetch(<?php echo wp_json_encode($ajax); ?>, {
-                    method:'POST', credentials:'same-origin',
-                    headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body
-                }).then(function(r){ return r.json(); }).then(function(res){
-                    if (res && res.success) {
-                        if (confirm(res.data.count + ' ' + <?php echo wp_json_encode(__('cookie(s) saved. Open settings to review?', 'cookie-consent')); ?>)) {
-                            window.location.href = <?php echo wp_json_encode($settings_url); ?>;
-                        }
-                    } else {
-                        alert(<?php echo wp_json_encode(__('Scan failed.', 'cookie-consent')); ?>);
-                    }
-                }).catch(function(){ alert(<?php echo wp_json_encode(__('Scan failed (network).', 'cookie-consent')); ?>); });
-            });
-        })();
-        </script>
-        <?php
-    }
-
-    /** Describe a cookie name: [category, purpose, duration]. */
-    public function describe_cookie($name) {
-        $map = array(
-            '/^_ga$/' => array('analytics', 'Google Analytics – distinguishes unique visitors.', '2 years'),
-            '/^_ga_/' => array('analytics', 'Google Analytics 4 – persists the session state.', '2 years'),
-            '/^_gid$/' => array('analytics', 'Google Analytics – distinguishes unique visitors.', '24 hours'),
-            '/^_gat/' => array('analytics', 'Google Analytics – throttles the request rate.', '1 minute'),
-            '/^__utm/' => array('analytics', 'Universal Analytics – visitor/session data.', 'up to 2 years'),
-            '/^_dc_gtm/' => array('analytics', 'Google Tag Manager – throttles request rate.', '1 minute'),
-            '/^trafic/' => array('analytics', 'Site traffic monitoring / visit statistics.', 'varies'),
-            '/^_gcl/' => array('marketing', 'Google Ads – stores ad-click conversion info.', '90 days'),
-            '/^_fbp/' => array('marketing', 'Meta (Facebook) Pixel – identifies browsers for ad delivery.', '90 days'),
-            '/^fr$/' => array('marketing', 'Meta (Facebook) – ad delivery and measurement.', '90 days'),
-            '/^_scid/' => array('marketing', 'Advertising – campaign/click attribution.', 'varies'),
-            '/^li_/' => array('marketing', 'LinkedIn – ad targeting and tracking.', 'varies'),
-            '/^_hj/' => array('analytics', 'Hotjar – behaviour analytics.', 'varies'),
-            '/^_clck|^_clsk/' => array('analytics', 'Microsoft Clarity – session analytics.', '1 year'),
-            '/^hubspotutk/' => array('marketing', 'HubSpot – visitor identity for marketing.', '6 months'),
-        );
-        foreach ($map as $re => $info) {
-            if (preg_match($re, $name)) return $info;
-        }
-        $ccname = isset($this->settings['cookie_name']) ? $this->settings['cookie_name'] : 'cc_cookie';
-        if ($name === $ccname) return array('necessary', 'Stores your cookie consent choices.', '1 year');
-        return array($this->guess_category($name), 'Detected on the website.', '');
-    }
-
-    /** AJAX: save the cookies the admin-bar scanner read from the page. */
-    public function ajax_scan_clientside() {
-        if (!current_user_can('manage_options')) wp_send_json_error();
-        check_ajax_referer('cc_scan_clientside', 'nonce');
-
-        $names = isset($_POST['cookies']) ? (array) $_POST['cookies'] : array();
-        $existing = (isset($this->settings['cookies']) && is_array($this->settings['cookies'])) ? $this->settings['cookies'] : array();
-        $by_name = array();
-        foreach ($existing as $c) { if (!empty($c['name'])) $by_name[$c['name']] = $c; }
-
-        $added = 0;
-        foreach ($names as $raw) {
-            $name = sanitize_text_field(wp_unslash($raw));
-            if ($name === '' || isset($by_name[$name]) || $this->is_ignored_cookie($name)) continue;
-            list($cat, $purpose, $duration) = $this->describe_cookie($name);
-            $by_name[$name] = array('name' => $name, 'category' => $cat, 'purpose' => $purpose, 'duration' => $duration, 'source' => 'browser');
-            $added++;
-        }
-        $this->settings['cookies'] = array_values($by_name);
-        update_option('cc_settings', $this->settings);
-        wp_send_json_success(array('count' => count($names), 'added' => $added));
-    }
-
     public function get_default_settings() {
         return array(
             'auto_show' => 'yes',
@@ -402,7 +170,6 @@ class CookieConsent_Plugin {
             'cookie_expiry' => 365,
             'reload_on_change' => 'yes',
             'language' => 'en',
-            'cookies' => array(), // discovered/declared cookies: [{name,category,purpose,duration,source}]
             'text' => array(
                 'en' => $this->default_text('en'),
                 'ro' => $this->default_text('ro')
@@ -483,26 +250,6 @@ class CookieConsent_Plugin {
                 } else {
                     $sanitized['text'][$lng][$key] = $default;
                 }
-            }
-        }
-
-        // Scanned/declared cookies (from the "Scan Cookies" table). A row with
-        // its "remove" box ticked, or with an empty name, is dropped.
-        $valid_cats = array('necessary', 'analytics', 'marketing');
-        $sanitized['cookies'] = array();
-        if (isset($input['cookies']) && is_array($input['cookies'])) {
-            foreach ($input['cookies'] as $row) {
-                if (!is_array($row) || !empty($row['remove'])) continue;
-                $name = isset($row['name']) ? sanitize_text_field($row['name']) : '';
-                if ($name === '') continue;
-                $cat = (isset($row['category']) && in_array($row['category'], $valid_cats, true)) ? $row['category'] : 'necessary';
-                $sanitized['cookies'][] = array(
-                    'name' => $name,
-                    'category' => $cat,
-                    'purpose' => isset($row['purpose']) ? sanitize_text_field($row['purpose']) : '',
-                    'duration' => isset($row['duration']) ? sanitize_text_field($row['duration']) : '',
-                    'source' => isset($row['source']) ? sanitize_text_field($row['source']) : 'manual',
-                );
             }
         }
 
@@ -887,21 +634,6 @@ class CookieConsent_Plugin {
             );
         }
 
-        // Stored (scanned) cookies grouped by category — the only source the
-        // front-end modal uses. No live scanning happens on the website.
-        $cookies = array('necessary' => array(), 'analytics' => array(), 'marketing' => array());
-        if (!empty($this->settings['cookies']) && is_array($this->settings['cookies'])) {
-            foreach ($this->settings['cookies'] as $c) {
-                if (empty($c['name']) || $this->is_ignored_cookie($c['name'])) continue;
-                $cat = (isset($c['category']) && isset($cookies[$c['category']])) ? $c['category'] : 'necessary';
-                $cookies[$cat][] = array(
-                    'name' => $c['name'],
-                    'description' => isset($c['purpose']) ? $c['purpose'] : '',
-                    'duration' => isset($c['duration']) ? $c['duration'] : ''
-                );
-            }
-        }
-
         return array(
             'categories' => $categories,
             'position' => $this->settings['position'],
@@ -910,7 +642,6 @@ class CookieConsent_Plugin {
             'cookieName' => $this->settings['cookie_name'],
             'cookieExpiry' => intval($this->settings['cookie_expiry']),
             'reloadOnChange' => $this->settings['reload_on_change'] === 'yes',
-            'cookies' => $cookies,
             'text' => $this->get_text()
         );
     }
@@ -1021,98 +752,20 @@ class CookieConsent_Plugin {
             ?>
 
             <div style="margin:16px 0;">
-                <button type="button" class="button button-secondary" id="cc-inbrowser-scan"><?php _e('Scan Cookies', 'cookie-consent'); ?></button>
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;margin-left:8px;" onsubmit="return confirm('<?php echo esc_js(__('Download the latest version from GitHub and overwrite the plugin files?', 'cookie-consent')); ?>');">
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;" onsubmit="return confirm('<?php echo esc_js(__('Download the latest version from GitHub and overwrite the plugin files?', 'cookie-consent')); ?>');">
                     <input type="hidden" name="action" value="cc_update_github">
                     <?php wp_nonce_field('cc_update_github'); ?>
                     <?php submit_button(__('Update from GitHub', 'cookie-consent'), 'secondary', 'cc_update_submit', false); ?>
                 </form>
                 <p class="description" style="margin-top:6px;">
-                    <?php _e('“Scan Cookies” loads your homepage in the browser and records the cookies it actually sets (including JavaScript ones). “Update from GitHub” pulls the latest plugin version.', 'cookie-consent'); ?>
+                    <?php _e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'cookie-consent'); ?>
                     <?php echo ' ' . esc_html(sprintf(__('Current version: %s', 'cookie-consent'), CC_VERSION)); ?>
                 </p>
             </div>
-            <script>
-            (function(){
-                var btn = document.getElementById('cc-inbrowser-scan');
-                if (!btn) return;
-                var HOME = <?php echo wp_json_encode(home_url('/')); ?>;
-                var AJAX = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
-                var NONCE = <?php echo wp_json_encode(wp_create_nonce('cc_scan_clientside')); ?>;
-                var CCNAME = <?php echo wp_json_encode(isset($this->settings['cookie_name']) ? $this->settings['cookie_name'] : 'cc_cookie'); ?>;
-                function getCookie(n){ var m = ('; ' + document.cookie).split('; ' + n + '='); return m.length === 2 ? m.pop().split(';').shift() : null; }
-                btn.addEventListener('click', function(){
-                    btn.disabled = true; var label = btn.textContent; btn.textContent = '<?php echo esc_js(__('Scanning…', 'cookie-consent')); ?>';
-                    // Temporarily grant full consent so the homepage sets all its cookies during the scan.
-                    var orig = getCookie(CCNAME);
-                    document.cookie = CCNAME + '=' + encodeURIComponent(JSON.stringify({categories:['necessary','analytics','marketing'],timestamp:1})) + ';path=/;max-age=180';
-                    var before = {}; (document.cookie||'').split(';').forEach(function(c){ before[c.split('=')[0].trim()] = 1; });
-                    var ifr = document.createElement('iframe');
-                    ifr.style.cssText = 'position:absolute;left:-9999px;width:10px;height:10px;border:0;';
-                    ifr.src = HOME + (HOME.indexOf('?') > -1 ? '&' : '?') + '_ccscan=' + Date.now();
-                    document.body.appendChild(ifr);
-                    setTimeout(function(){
-                        var names = [];
-                        try { names = (ifr.contentWindow.document.cookie || '').split(';').map(function(c){ return c.split('=')[0].trim(); }).filter(Boolean); } catch(e){}
-                        (document.cookie||'').split(';').forEach(function(c){ var n = c.split('=')[0].trim(); if (n && names.indexOf(n) < 0) names.push(n); });
-                        try { document.body.removeChild(ifr); } catch(e){}
-                        // Restore the admin's real consent state.
-                        if (orig === null) { document.cookie = CCNAME + '=;path=/;max-age=0'; }
-                        else { document.cookie = CCNAME + '=' + orig + ';path=/'; }
-                        // Clean up tracking cookies that this scan caused to be set.
-                        names.forEach(function(n){ if (!before[n] && n !== CCNAME) { document.cookie = n + '=;path=/;max-age=0'; document.cookie = n + '=;path=/;domain=.' + location.hostname + ';max-age=0'; } });
-                        if (!names.length) { alert('<?php echo esc_js(__('No cookies detected. Your site may block being framed; tell us and we will adjust.', 'cookie-consent')); ?>'); btn.disabled = false; btn.textContent = label; return; }
-                        var body = 'action=cc_scan_clientside&nonce=' + encodeURIComponent(NONCE) + names.map(function(n){ return '&cookies[]=' + encodeURIComponent(n); }).join('');
-                        fetch(AJAX, { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body })
-                            .then(function(r){ return r.json(); })
-                            .then(function(res){ alert((res && res.success ? (res.data.added + ' <?php echo esc_js(__('new cookie(s) added', 'cookie-consent')); ?>') : '<?php echo esc_js(__('Scan failed.', 'cookie-consent')); ?>')); location.reload(); })
-                            .catch(function(){ alert('<?php echo esc_js(__('Scan failed (network).', 'cookie-consent')); ?>'); location.reload(); });
-                    }, 4500);
-                });
-            })();
-            </script>
 
             <form method="post" action="options.php">
                 <?php settings_fields('cc_settings_group'); ?>
 
-                <h2><?php _e('Scanned Cookies', 'cookie-consent'); ?></h2>
-                <p><?php _e('Cookies found by "Scan Cookies" above (or added manually). This is exactly what the preferences modal lists — the website does no live scanning. Edit the category/purpose/duration, tick Remove to delete, then Save Changes.', 'cookie-consent'); ?></p>
-                <?php $scanned = (isset($this->settings['cookies']) && is_array($this->settings['cookies'])) ? $this->settings['cookies'] : array(); ?>
-                <table class="widefat striped" style="max-width:1000px;margin-bottom:20px;">
-                    <thead><tr>
-                        <th><?php _e('Cookie', 'cookie-consent'); ?></th>
-                        <th><?php _e('Category', 'cookie-consent'); ?></th>
-                        <th><?php _e('Purpose', 'cookie-consent'); ?></th>
-                        <th><?php _e('Duration', 'cookie-consent'); ?></th>
-                        <th><?php _e('Source', 'cookie-consent'); ?></th>
-                        <th><?php _e('Remove', 'cookie-consent'); ?></th>
-                    </tr></thead>
-                    <tbody>
-                    <?php
-                    // Render saved rows, then 3 blank rows for manual additions.
-                    $rows = $scanned;
-                    for ($b = 0; $b < 3; $b++) { $rows[] = array('name' => '', 'category' => 'necessary', 'purpose' => '', 'duration' => '', 'source' => 'manual'); }
-                    foreach ($rows as $i => $c):
-                    ?>
-                        <tr>
-                            <td><input type="text" name="cc_settings[cookies][<?php echo $i; ?>][name]" value="<?php echo esc_attr($c['name']); ?>" placeholder="<?php esc_attr_e('cookie name', 'cookie-consent'); ?>" style="width:160px;"><input type="hidden" name="cc_settings[cookies][<?php echo $i; ?>][source]" value="<?php echo esc_attr(isset($c['source'])?$c['source']:'manual'); ?>"></td>
-                            <td>
-                                <select name="cc_settings[cookies][<?php echo $i; ?>][category]">
-                                    <?php foreach (array('necessary','analytics','marketing') as $cat): ?>
-                                        <option value="<?php echo $cat; ?>" <?php selected(isset($c['category'])?$c['category']:'necessary', $cat); ?>><?php echo esc_html(ucfirst($cat)); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-                            <td><input type="text" class="regular-text" name="cc_settings[cookies][<?php echo $i; ?>][purpose]" value="<?php echo esc_attr(isset($c['purpose'])?$c['purpose']:''); ?>"></td>
-                            <td><input type="text" name="cc_settings[cookies][<?php echo $i; ?>][duration]" value="<?php echo esc_attr(isset($c['duration'])?$c['duration']:''); ?>" style="width:110px;"></td>
-                            <td><?php echo esc_html(isset($c['source'])?$c['source']:'manual'); ?></td>
-                            <td style="text-align:center;"><input type="checkbox" name="cc_settings[cookies][<?php echo $i; ?>][remove]" value="1"></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-                <p class="description"><?php _e('Tip: JavaScript-set cookies (e.g. a custom traffic counter) can\'t be seen by a server scan — add them in the blank rows above.', 'cookie-consent'); ?></p>
-                
                 <table class="form-table">
                     <tr>
                         <th scope="row"><?php _e('Auto Show Banner', 'cookie-consent'); ?></th>
