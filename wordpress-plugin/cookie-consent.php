@@ -3,7 +3,7 @@
  * Plugin Name: Cookie Consent VE
  * Plugin URI: https://vesrl.ro
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.1.5
+ * Version: 1.1.6
  * Author: VE
  * Author URI: https://vesrl.ro
  * License: MIT
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CC_VERSION', '1.1.5');
+define('CC_VERSION', '1.1.6');
 define('CC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CC_PLUGIN_URL', plugin_dir_url(__FILE__));
 

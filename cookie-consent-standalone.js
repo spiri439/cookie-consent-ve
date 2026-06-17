@@ -821,8 +821,8 @@
       .cc-theme-dark .cc-banner__btn--secondary:hover { background: #3a3a3a; }
       
       /* Overlay */
-      .cc-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999998; display: none; }
-      .cc-overlay.show { display: flex; align-items: center; justify-content: center; }
+      .cc-overlay { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(0,0,0,0.5); z-index: 2147483646 !important; display: none; pointer-events: auto !important; padding: 16px; }
+      .cc-overlay.show { display: flex !important; align-items: center; justify-content: center; }
       .cc-theme-dark .cc-overlay { background: rgba(0,0,0,0.75); }
       
       /* Modal */
@@ -851,6 +851,7 @@
       .cc-category__desc { font-size: 13px; color: #666; line-height: 1.5; }
       .cc-theme-dark .cc-category__desc { color: #999; }
 
+      .cc-cookie-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .cc-cookie-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
       .cc-cookie-table th, .cc-cookie-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
       .cc-cookie-table th { color: #666; font-weight: 600; }
