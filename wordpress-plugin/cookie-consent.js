@@ -1227,6 +1227,12 @@
     }
     STATE.modalElement = createModal();
     if (STATE.modalElement) {
+      // Hide the banner while the preferences modal is open, so they don't
+      // overlap on screen. The banner CSS uses display:block !important, so the
+      // inline override must also be !important.
+      if (STATE.bannerElement) { STATE.bannerElement.style.setProperty('display', 'none', 'important'); }
+      const mc = document.getElementById('cc-main');
+      if (mc) { mc.style.setProperty('display', 'block', 'important'); }
       setTimeout(() => {
         STATE.modalElement.classList.add('show');
         STATE.modalShown = true;
@@ -1241,6 +1247,13 @@
     if (STATE.modalElement) {
       STATE.modalElement.classList.remove('show');
       STATE.modalShown = false;
+    }
+    // If the visitor closed settings without making a choice, bring the banner
+    // back so they can still accept or reject.
+    if (!STATE.preferences && STATE.bannerElement) {
+      STATE.bannerElement.style.setProperty('display', 'block', 'important');
+      STATE.bannerElement.style.setProperty('visibility', 'visible', 'important');
+      STATE.bannerElement.style.setProperty('opacity', '1', 'important');
     }
   }
 
