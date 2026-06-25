@@ -1,12 +1,13 @@
 <?php
 /**
  * Plugin Name: Cookie Consent VE
- * Plugin URI: https://vesrl.ro
+ * Plugin URI: https://github.com/spiri439/cookie-consent-ve
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
  * Version: 1.1.7
- * Author: VE
- * Author URI: https://vesrl.ro
+ * Author: nextdoorentertainment
+ * Author URI: https://vladenterprises.ro
  * License: MIT
+ * License URI: https://opensource.org/licenses/MIT
  * Text Domain: cookie-consent
  */
 
