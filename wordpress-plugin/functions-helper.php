@@ -6,10 +6,14 @@
  * This ensures cookie consent script loads BEFORE Google Analytics and other tracking scripts
  */
 
+if (!defined('ABSPATH')) {
+    exit; // No direct access.
+}
+
 // Load cookie consent script with highest priority (before other scripts)
 // NOTE: This is only needed if plugin loads too late
 // The plugin already loads in HEAD, but this gives even higher priority
-function cc_load_cookie_consent_early() {
+function ccve_load_cookie_consent_early() {
     // Get plugin directory URL
     $plugin_url = plugin_dir_url(__DIR__ . '/cookie-consent.php');
     if (!$plugin_url) {
@@ -30,5 +34,5 @@ function cc_load_cookie_consent_early() {
     }
 }
 // Priority 1 = Very early, before most other scripts
-add_action('wp_enqueue_scripts', 'cc_load_cookie_consent_early', 1);
+add_action('wp_enqueue_scripts', 'ccve_load_cookie_consent_early', 1);
 

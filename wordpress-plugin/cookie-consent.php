@@ -16,11 +16,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CC_VERSION', '1.1.7');
-define('CC_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('CC_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('CCVE_VERSION', '1.1.7');
+define('CCVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('CCVE_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-class CookieConsent_Plugin {
+class CCVE_Cookie_Consent {
     
     private $settings;
     
@@ -53,7 +53,8 @@ class CookieConsent_Plugin {
     }
     
     public function init() {
-        load_plugin_textdomain('cookie-consent-ve', false, dirname(plugin_basename(__FILE__)) . '/languages');
+        // Translations are loaded automatically by WordPress.org for hosted
+        // plugins (since WP 4.6); load_plugin_textdomain() is not needed.
     }
     
     /** Supported UI languages. */
@@ -130,7 +131,7 @@ class CookieConsent_Plugin {
 
         $dest = trailingslashit(get_temp_dir()) . 'ccve-update-' . wp_rand();
         $unzip = unzip_file($tmp, $dest);
-        @unlink($tmp);
+        wp_delete_file($tmp);
         if (is_wp_error($unzip)) $redirect('error', $unzip->get_error_message());
 
         // Locate the plugin files inside the extracted archive (…/wordpress-plugin
@@ -148,7 +149,7 @@ class CookieConsent_Plugin {
         }
         if ($src === '') { $wp_filesystem->delete($dest, true); $redirect('error', 'Plugin files not found in the downloaded archive.'); }
 
-        $copied = copy_dir($src, untrailingslashit(CC_PLUGIN_DIR));
+        $copied = copy_dir($src, untrailingslashit(CCVE_PLUGIN_DIR));
         $wp_filesystem->delete($dest, true);
         if (is_wp_error($copied)) $redirect('error', $copied->get_error_message());
 
@@ -156,7 +157,7 @@ class CookieConsent_Plugin {
         $new_ver = '';
         if (function_exists('get_plugin_data')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
-            $data = get_plugin_data(CC_PLUGIN_DIR . 'cookie-consent.php', false, false);
+            $data = get_plugin_data(CCVE_PLUGIN_DIR . 'cookie-consent.php', false, false);
             $new_ver = isset($data['Version']) ? $data['Version'] : '';
         }
         $redirect('success', $new_ver !== '' ? ('Updated to ' . $new_ver) : 'Updated from GitHub.');
@@ -561,9 +562,9 @@ class CookieConsent_Plugin {
         // Priority 1 ensures it loads before most other scripts
         wp_enqueue_script(
             'cookie-consent',
-            CC_PLUGIN_URL . 'cookie-consent.js',
+            CCVE_PLUGIN_URL . 'cookie-consent.js',
             array(),
-            CC_VERSION,
+            CCVE_VERSION,
             false // Load in HEAD, not footer - critical for cookie blocking
         );
     }
@@ -745,10 +746,11 @@ class CookieConsent_Plugin {
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
             <?php
-            if (isset($_GET['cc_update'])) {
-                $msg = isset($_GET['cc_update_msg']) ? rawurldecode($_GET['cc_update_msg']) : '';
-                $cls = $_GET['cc_update'] === 'success' ? 'notice-success' : 'notice-error';
-                echo '<div class="notice ' . $cls . '"><p>' . esc_html($msg !== '' ? $msg : ($_GET['cc_update'] === 'success' ? 'Updated from GitHub.' : 'Update failed.')) . '</p></div>';
+            if (isset($_GET['cc_update'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only status flag from our own admin-post redirect, not form input
+                $status = sanitize_text_field(wp_unslash($_GET['cc_update'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $msg = isset($_GET['cc_update_msg']) ? sanitize_text_field(rawurldecode(wp_unslash($_GET['cc_update_msg']))) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $cls = $status === 'success' ? 'notice-success' : 'notice-error';
+                echo '<div class="notice ' . esc_attr($cls) . '"><p>' . esc_html($msg !== '' ? $msg : ($status === 'success' ? 'Updated from GitHub.' : 'Update failed.')) . '</p></div>';
             }
             ?>
 
@@ -759,8 +761,11 @@ class CookieConsent_Plugin {
                     <?php submit_button(__('Update from GitHub', 'cookie-consent-ve'), 'secondary', 'cc_update_submit', false); ?>
                 </form>
                 <p class="description" style="margin-top:6px;">
-                    <?php _e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'cookie-consent-ve'); ?>
-                    <?php echo ' ' . esc_html(sprintf(__('Current version: %s', 'cookie-consent-ve'), CC_VERSION)); ?>
+                    <?php esc_html_e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'cookie-consent-ve'); ?>
+                    <?php
+                    /* translators: %s: current plugin version number */
+                    echo ' ' . esc_html(sprintf(__('Current version: %s', 'cookie-consent-ve'), CCVE_VERSION));
+                    ?>
                 </p>
             </div>
 
@@ -769,17 +774,17 @@ class CookieConsent_Plugin {
 
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php _e('Auto Show Banner', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Auto Show Banner', 'cookie-consent-ve'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="cc_settings[auto_show]" value="yes" <?php checked($this->settings['auto_show'], 'yes'); ?>>
-                                <?php _e('Show cookie banner automatically on first visit', 'cookie-consent-ve'); ?>
+                                <?php esc_html_e('Show cookie banner automatically on first visit', 'cookie-consent-ve'); ?>
                             </label>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Banner Position', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Banner Position', 'cookie-consent-ve'); ?></th>
                         <td>
                             <select name="cc_settings[position]">
                                 <option value="bottom-right" <?php selected($this->settings['position'], 'bottom-right'); ?>>Bottom Right</option>
@@ -792,7 +797,7 @@ class CookieConsent_Plugin {
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Theme', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Theme', 'cookie-consent-ve'); ?></th>
                         <td>
                             <select name="cc_settings[theme]">
                                 <option value="light" <?php selected($this->settings['theme'], 'light'); ?>>Light</option>
@@ -802,53 +807,58 @@ class CookieConsent_Plugin {
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Cookie Name', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Cookie Name', 'cookie-consent-ve'); ?></th>
                         <td>
                             <input type="text" name="cc_settings[cookie_name]" value="<?php echo esc_attr($this->settings['cookie_name']); ?>" class="regular-text">
-                            <p class="description"><?php _e('Name of the cookie used to store preferences', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Name of the cookie used to store preferences', 'cookie-consent-ve'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Cookie Expiry (days)', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Cookie Expiry (days)', 'cookie-consent-ve'); ?></th>
                         <td>
                             <input type="number" name="cc_settings[cookie_expiry]" value="<?php echo esc_attr($this->settings['cookie_expiry']); ?>" min="1" max="3650" class="small-text">
-                            <p class="description"><?php _e('Number of days until cookie expires', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Number of days until cookie expires', 'cookie-consent-ve'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php _e('Reload on Change', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Reload on Change', 'cookie-consent-ve'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="cc_settings[reload_on_change]" value="yes" <?php checked($this->settings['reload_on_change'], 'yes'); ?>>
-                                <?php _e('Reload page when preferences are changed', 'cookie-consent-ve'); ?>
+                                <?php esc_html_e('Reload page when preferences are changed', 'cookie-consent-ve'); ?>
                             </label>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php _e('Display Language', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Display Language', 'cookie-consent-ve'); ?></h2>
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php _e('Banner Language', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Banner Language', 'cookie-consent-ve'); ?></th>
                         <td>
                             <select name="cc_settings[language]">
                                 <?php foreach ($this->languages() as $lang_code => $lang_label): ?>
                                     <option value="<?php echo esc_attr($lang_code); ?>" <?php selected($this->current_language(), $lang_code); ?>><?php echo esc_html($lang_label); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <p class="description"><?php _e('Language used for the banner and preferences modal on the website.', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Language used for the banner and preferences modal on the website.', 'cookie-consent-ve'); ?></p>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php _e('Banner Text', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Banner Text', 'cookie-consent-ve'); ?></h2>
                 <?php
                 $cur_lang = $this->current_language();
                 $cur_label = $this->languages()[$cur_lang];
                 ?>
-                <p><?php printf(esc_html__('Text for the selected language: %s. Change "Banner Language" above and Save to edit the other language.', 'cookie-consent-ve'), '<strong>' . esc_html($cur_label) . '</strong>'); ?></p>
+                <p>
+                    <?php
+                    /* translators: %s: name of the currently selected language */
+                    printf(esc_html__('Text for the selected language: %s. Change "Banner Language" above and Save to edit the other language.', 'cookie-consent-ve'), '<strong>' . esc_html($cur_label) . '</strong>');
+                    ?>
+                </p>
                 <?php
                 $text_labels = array(
                     'title' => __('Banner Title', 'cookie-consent-ve'),
@@ -884,8 +894,8 @@ class CookieConsent_Plugin {
                     <?php endforeach; ?>
                 </table>
 
-                <h2><?php _e('Cookie Categories', 'cookie-consent-ve'); ?></h2>
-                <p><?php _e('Configure cookie categories that users can manage', 'cookie-consent-ve'); ?></p>
+                <h2><?php esc_html_e('Cookie Categories', 'cookie-consent-ve'); ?></h2>
+                <p><?php esc_html_e('Configure cookie categories that users can manage', 'cookie-consent-ve'); ?></p>
 
                 <?php foreach ($this->settings['categories'] as $key => $category): ?>
                 <fieldset style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
@@ -893,34 +903,34 @@ class CookieConsent_Plugin {
                     
                     <table class="form-table">
                         <tr>
-                            <th scope="row"><?php _e('Enabled', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Enabled', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <label>
                                     <input type="checkbox" name="cc_settings[categories][<?php echo esc_attr($key); ?>][enabled]" value="yes" <?php checked($category['enabled'], 'yes'); ?>>
-                                    <?php _e('Enable this category', 'cookie-consent-ve'); ?>
+                                    <?php esc_html_e('Enable this category', 'cookie-consent-ve'); ?>
                                 </label>
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php _e('Read Only', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Read Only', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <label>
                                     <input type="checkbox" name="cc_settings[categories][<?php echo esc_attr($key); ?>][readonly]" value="yes" <?php checked($category['readonly'], 'yes'); ?>>
-                                    <?php _e('Users cannot disable this category', 'cookie-consent-ve'); ?>
+                                    <?php esc_html_e('Users cannot disable this category', 'cookie-consent-ve'); ?>
                                 </label>
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php _e('Display Name', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Display Name', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <input type="text" name="cc_settings[categories][<?php echo esc_attr($key); ?>][name]" value="<?php echo esc_attr($category['name']); ?>" class="regular-text">
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php _e('Description', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Description', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <textarea name="cc_settings[categories][<?php echo esc_attr($key); ?>][description]" rows="3" class="large-text"><?php echo esc_textarea($category['description']); ?></textarea>
                             </td>
@@ -933,24 +943,24 @@ class CookieConsent_Plugin {
             </form>
             
             <div style="margin-top: 40px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
-                <h2><?php _e('Usage', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Usage', 'cookie-consent-ve'); ?></h2>
                 
-                <h3><?php _e('Shortcode', 'cookie-consent-ve'); ?></h3>
-                <p><?php _e('Add a cookie settings link anywhere in your content using:', 'cookie-consent-ve'); ?></p>
+                <h3><?php esc_html_e('Shortcode', 'cookie-consent-ve'); ?></h3>
+                <p><?php esc_html_e('Add a cookie settings link anywhere in your content using:', 'cookie-consent-ve'); ?></p>
                 <ul style="list-style: disc; margin-left: 20px;">
-                    <li><code>[cc_settings]</code> - <?php _e('Simple link with default text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[cc_settings text="Manage Cookies"]</code> - <?php _e('Custom text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[cc_settings text="Cookie Preferences" button="yes"]</code> - <?php _e('Display as button', 'cookie-consent-ve'); ?></li>
+                    <li><code>[cc_settings]</code> - <?php esc_html_e('Simple link with default text', 'cookie-consent-ve'); ?></li>
+                    <li><code>[cc_settings text="Manage Cookies"]</code> - <?php esc_html_e('Custom text', 'cookie-consent-ve'); ?></li>
+                    <li><code>[cc_settings text="Cookie Preferences" button="yes"]</code> - <?php esc_html_e('Display as button', 'cookie-consent-ve'); ?></li>
                 </ul>
                 
-                <h3 style="margin-top: 20px;"><?php _e('Widget', 'cookie-consent-ve'); ?></h3>
-                <p><?php _e('Go to Appearance > Widgets and add "Cookie Settings" widget to any widget area.', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Widget', 'cookie-consent-ve'); ?></h3>
+                <p><?php esc_html_e('Go to Appearance > Widgets and add "Cookie Settings" widget to any widget area.', 'cookie-consent-ve'); ?></p>
                 
-                <h3 style="margin-top: 20px;"><?php _e('Gutenberg Block', 'cookie-consent-ve'); ?></h3>
-                <p><?php _e('Search for "Cookie Settings" in the block inserter.', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Gutenberg Block', 'cookie-consent-ve'); ?></h3>
+                <p><?php esc_html_e('Search for "Cookie Settings" in the block inserter.', 'cookie-consent-ve'); ?></p>
                 
-                <h3 style="margin-top: 20px;"><?php _e('Gated Scripts', 'cookie-consent-ve'); ?></h3>
-                <p><?php _e('To gate your scripts by consent, add these attributes to script tags:', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Gated Scripts', 'cookie-consent-ve'); ?></h3>
+                <p><?php esc_html_e('To gate your scripts by consent, add these attributes to script tags:', 'cookie-consent-ve'); ?></p>
                 <pre style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto;">
 &lt;script type="text/plain" data-category="analytics"&gt;
     // Your analytics code here
@@ -984,10 +994,10 @@ class Cookie_Consent_Widget extends WP_Widget {
         $text = !empty($instance['text']) ? $instance['text'] : 'Cookie Settings';
         $is_button = !empty($instance['is_button']) ? $instance['is_button'] : false;
         
-        echo $args['before_widget'];
+        echo $args['before_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup from register_sidebar()
         
         if (!empty($title)) {
-            echo $args['before_title'] . esc_html($title) . $args['after_title'];
+            echo $args['before_title'] . esc_html($title) . $args['after_title']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- before/after_title from register_sidebar()
         }
         
         if ($is_button) {
@@ -998,7 +1008,7 @@ class Cookie_Consent_Widget extends WP_Widget {
                  esc_html($text) . '</a>';
         }
         
-        echo $args['after_widget'];
+        echo $args['after_widget']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup from register_sidebar()
     }
     
     public function form($instance) {
@@ -1007,13 +1017,13 @@ class Cookie_Consent_Widget extends WP_Widget {
         $is_button = !empty($instance['is_button']) ? $instance['is_button'] : false;
         ?>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e('Title:', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_html_e('Title:', 'cookie-consent-ve'); ?></label>
             <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('title')); ?>" 
                    type="text" value="<?php echo esc_attr($title); ?>">
         </p>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php _e('Link/Button Text:', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_html_e('Link/Button Text:', 'cookie-consent-ve'); ?></label>
             <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('text')); ?>" 
                    type="text" value="<?php echo esc_attr($text); ?>">
@@ -1023,7 +1033,7 @@ class Cookie_Consent_Widget extends WP_Widget {
                    id="<?php echo esc_attr($this->get_field_id('is_button')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('is_button')); ?>" 
                    value="1" <?php checked($is_button, 1); ?>>
-            <label for="<?php echo esc_attr($this->get_field_id('is_button')); ?>"><?php _e('Display as button instead of link', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('is_button')); ?>"><?php esc_html_e('Display as button instead of link', 'cookie-consent-ve'); ?></label>
         </p>
         <?php
     }
@@ -1038,4 +1048,4 @@ class Cookie_Consent_Widget extends WP_Widget {
 }
 
 // Initialize plugin
-new CookieConsent_Plugin();
+new CCVE_Cookie_Consent();
