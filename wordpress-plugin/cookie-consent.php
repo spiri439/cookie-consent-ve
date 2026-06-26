@@ -748,7 +748,7 @@ class CCVE_Cookie_Consent {
             <?php
             if (isset($_GET['cc_update'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only status flag from our own admin-post redirect, not form input
                 $status = sanitize_text_field(wp_unslash($_GET['cc_update'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $msg = isset($_GET['cc_update_msg']) ? sanitize_text_field(rawurldecode(wp_unslash($_GET['cc_update_msg']))) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+                $msg = isset($_GET['cc_update_msg']) ? rawurldecode(sanitize_text_field(wp_unslash($_GET['cc_update_msg']))) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 $cls = $status === 'success' ? 'notice-success' : 'notice-error';
                 echo '<div class="notice ' . esc_attr($cls) . '"><p>' . esc_html($msg !== '' ? $msg : ($status === 'success' ? 'Updated from GitHub.' : 'Update failed.')) . '</p></div>';
             }
