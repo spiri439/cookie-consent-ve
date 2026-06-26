@@ -74,6 +74,7 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 
 = 1.1.8 =
 * Removed the self-update-from-GitHub feature (overwriting plugin files from an external source is not permitted on WordPress.org; updates come through the directory).
+* Removed the unused functions-helper.php example file, which contained a hardcoded plugin path. The plugin determines its own location via plugin_dir_url(__FILE__).
 
 = 1.1.7 =
 * Directory compliance: distinct Plugin URI and Author URI, WordPress.org username as author, explicit License URI.
