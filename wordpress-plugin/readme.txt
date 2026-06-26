@@ -4,7 +4,7 @@ Tags: gdpr, cookie consent, cookie banner, privacy, consent
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -72,11 +72,17 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 
 == Changelog ==
 
+= 1.1.8 =
+* Removed the self-update-from-GitHub feature (overwriting plugin files from an external source is not permitted on WordPress.org; updates come through the directory).
+
 = 1.1.7 =
 * Directory compliance: distinct Plugin URI and Author URI, WordPress.org username as author, explicit License URI.
 * Added WordPress.org readme.
 
 == Upgrade Notice ==
+
+= 1.1.8 =
+Removes the external GitHub self-updater for WordPress.org compliance.
 
 = 1.1.7 =
 Packaging and header fixes for the WordPress.org directory. No functional changes.

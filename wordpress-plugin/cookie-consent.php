@@ -3,7 +3,7 @@
  * Plugin Name: Cookie Consent VE
  * Plugin URI: https://github.com/spiri439/cookie-consent-ve
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.1.7
+ * Version: 1.1.8
  * Author: nextdoorentertainment
  * Author URI: https://vladenterprises.ro
  * License: MIT
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CCVE_VERSION', '1.1.7');
+define('CCVE_VERSION', '1.1.8');
 define('CCVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCVE_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -40,9 +40,6 @@ class CCVE_Cookie_Consent {
 
         // Stop cache/optimization plugins from deferring or delaying our script.
         add_filter('script_loader_tag', array($this, 'exclude_from_optimization'), 10, 3);
-
-        // Admin "Update from GitHub" action.
-        add_action('admin_post_cc_update_github', array($this, 'handle_github_update'));
 
         // Load settings, merged over defaults so every top-level key always
         // exists (prevents the settings page from erroring on sites upgraded
@@ -103,65 +100,6 @@ class CCVE_Cookie_Consent {
         return isset($t[$lang]) ? $t[$lang] : $t['en'];
     }
 
-    /** GitHub repo the "Update from GitHub" button pulls from. */
-    public function github_zip_url() {
-        return 'https://github.com/spiri439/cookie-consent-ve/archive/refs/heads/main.zip';
-    }
-
-    /** Download the latest plugin files from GitHub and overwrite this plugin. */
-    public function handle_github_update() {
-        if (!current_user_can('update_plugins') && !current_user_can('manage_options')) wp_die('Insufficient permissions');
-        check_admin_referer('cc_update_github');
-
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        WP_Filesystem();
-        global $wp_filesystem;
-
-        $redirect = function ($status, $msg = '') {
-            wp_safe_redirect(add_query_arg(array(
-                'page' => 'cookie-consent',
-                'cc_update' => $status,
-                'cc_update_msg' => $msg !== '' ? rawurlencode($msg) : false,
-            ), admin_url('options-general.php')));
-            exit;
-        };
-
-        $tmp = download_url($this->github_zip_url(), 30);
-        if (is_wp_error($tmp)) $redirect('error', $tmp->get_error_message());
-
-        $dest = trailingslashit(get_temp_dir()) . 'ccve-update-' . wp_rand();
-        $unzip = unzip_file($tmp, $dest);
-        wp_delete_file($tmp);
-        if (is_wp_error($unzip)) $redirect('error', $unzip->get_error_message());
-
-        // Locate the plugin files inside the extracted archive (…/wordpress-plugin
-        // or a folder that contains cookie-consent.php).
-        $src = '';
-        $top = @scandir($dest);
-        if ($top) {
-            foreach ($top as $entry) {
-                if ($entry === '.' || $entry === '..') continue;
-                $cand = $dest . '/' . $entry . '/wordpress-plugin';
-                if ($wp_filesystem->is_dir($cand) && $wp_filesystem->exists($cand . '/cookie-consent.php')) { $src = $cand; break; }
-                $cand2 = $dest . '/' . $entry;
-                if ($wp_filesystem->exists($cand2 . '/cookie-consent.php')) { $src = $cand2; break; }
-            }
-        }
-        if ($src === '') { $wp_filesystem->delete($dest, true); $redirect('error', 'Plugin files not found in the downloaded archive.'); }
-
-        $copied = copy_dir($src, untrailingslashit(CCVE_PLUGIN_DIR));
-        $wp_filesystem->delete($dest, true);
-        if (is_wp_error($copied)) $redirect('error', $copied->get_error_message());
-
-        // Read the new version from the updated header.
-        $new_ver = '';
-        if (function_exists('get_plugin_data')) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
-            $data = get_plugin_data(CCVE_PLUGIN_DIR . 'cookie-consent.php', false, false);
-            $new_ver = isset($data['Version']) ? $data['Version'] : '';
-        }
-        $redirect('success', $new_ver !== '' ? ('Updated to ' . $new_ver) : 'Updated from GitHub.');
-    }
 
     public function get_default_settings() {
         return array(
@@ -745,23 +683,8 @@ class CCVE_Cookie_Consent {
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-            <?php
-            if (isset($_GET['cc_update'])) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only status flag from our own admin-post redirect, not form input
-                $status = sanitize_text_field(wp_unslash($_GET['cc_update'])); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $msg = isset($_GET['cc_update_msg']) ? sanitize_text_field(wp_unslash($_GET['cc_update_msg'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $msg = rawurldecode($msg);
-                $cls = $status === 'success' ? 'notice-success' : 'notice-error';
-                echo '<div class="notice ' . esc_attr($cls) . '"><p>' . esc_html($msg !== '' ? $msg : ($status === 'success' ? 'Updated from GitHub.' : 'Update failed.')) . '</p></div>';
-            }
-            ?>
-
             <div style="margin:16px 0;">
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline;" onsubmit="return confirm('<?php echo esc_js(__('Download the latest version from GitHub and overwrite the plugin files?', 'cookie-consent-ve')); ?>');">
-                    <input type="hidden" name="action" value="cc_update_github">
-                    <?php wp_nonce_field('cc_update_github'); ?>
-                    <?php submit_button(__('Update from GitHub', 'cookie-consent-ve'), 'secondary', 'cc_update_submit', false); ?>
-                </form>
-                <p class="description" style="margin-top:6px;">
+                <p class="description">
                     <?php esc_html_e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'cookie-consent-ve'); ?>
                     <?php
                     /* translators: %s: current plugin version number */
