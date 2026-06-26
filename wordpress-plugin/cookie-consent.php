@@ -672,7 +672,7 @@ class CCVE_Cookie_Consent {
     
     // Register WordPress Widget
     public function register_widget() {
-        register_widget('Cookie_Consent_Widget');
+        register_widget('CCVE_Cookie_Consent_Widget');
     }
     
     public function render_admin_page() {
@@ -901,7 +901,7 @@ class CCVE_Cookie_Consent {
 }
 
 // WordPress Widget Class
-class Cookie_Consent_Widget extends WP_Widget {
+class CCVE_Cookie_Consent_Widget extends WP_Widget {
     
     public function __construct() {
         parent::__construct(
