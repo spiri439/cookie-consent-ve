@@ -1,10 +1,10 @@
-=== Cookie Consent VE ===
+=== Vlad Enterprises Cookie Consent ===
 Contributors: nextdoorentertainment
 Tags: gdpr, cookie consent, cookie banner, privacy, consent
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.1.9
+Stable tag: 1.2.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -12,7 +12,7 @@ GDPR cookie consent with script gating, category-based blocking, a preferences m
 
 == Description ==
 
-Cookie Consent VE is a lightweight, GDPR-minded cookie consent solution. It shows a consent banner on the first visit, gates analytics and marketing scripts until the visitor opts in, and automatically clears tracking cookies when consent is withdrawn.
+Vlad Enterprises Cookie Consent is a lightweight, GDPR-minded cookie consent solution. It shows a consent banner on the first visit, gates analytics and marketing scripts until the visitor opts in, and automatically clears tracking cookies when consent is withdrawn.
 
 Scripts are blocked *before* they run (not just hidden), so no analytics or marketing code executes without consent. A preferences modal lets visitors toggle categories at any time, and a shortcode or JavaScript API lets them reopen it later.
 
@@ -78,6 +78,9 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 
 == Changelog ==
 
+= 1.2.0 =
+* Renamed the plugin to "Vlad Enterprises Cookie Consent" (text domain `vlad-enterprises-cookie-consent`) for a distinctive, directory-compliant name.
+
 = 1.1.9 =
 * Prefixed the option, settings group and shortcode (`ccve_settings`) to avoid conflicts with other plugins. Existing settings are migrated automatically from the old option name.
 * Escaped the inline config output with `wp_json_encode()` using HTML/JS-safe flags.
@@ -92,6 +95,9 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 * Added WordPress.org readme.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Plugin renamed to "Vlad Enterprises Cookie Consent". Your settings are preserved.
 
 = 1.1.9 =
 Renames internal option/shortcode to a unique prefix (auto-migrates your settings) and hardens output escaping for WordPress.org compliance.

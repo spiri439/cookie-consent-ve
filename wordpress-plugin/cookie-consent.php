@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name: Cookie Consent VE
+ * Plugin Name: Vlad Enterprises Cookie Consent
  * Plugin URI: https://github.com/spiri439/cookie-consent-ve
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.1.9
+ * Version: 1.2.0
  * Author: nextdoorentertainment
  * Author URI: https://vladenterprises.ro
  * License: MIT
  * License URI: https://opensource.org/licenses/MIT
- * Text Domain: cookie-consent-ve
+ * Text Domain: vlad-enterprises-cookie-consent
  */
 
 // Prevent direct access
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CCVE_VERSION', '1.1.9');
+define('CCVE_VERSION', '1.2.0');
 define('CCVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCVE_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -150,15 +150,15 @@ class CCVE_Cookie_Consent {
      * Add a "Settings" link to this plugin's row on the Plugins page.
      */
     public function add_action_links($links) {
-        $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=cookie-consent')) . '">' . __('Settings', 'cookie-consent-ve') . '</a>';
+        $settings_link = '<a href="' . esc_url(admin_url('options-general.php?page=cookie-consent')) . '">' . __('Settings', 'vlad-enterprises-cookie-consent') . '</a>';
         array_unshift($links, $settings_link);
         return $links;
     }
 
     public function add_admin_menu() {
         add_options_page(
-            __('Cookie Consent Settings', 'cookie-consent-ve'),
-            __('Cookie Consent', 'cookie-consent-ve'),
+            __('Cookie Consent Settings', 'vlad-enterprises-cookie-consent'),
+            __('Cookie Consent', 'vlad-enterprises-cookie-consent'),
             'manage_options',
             'cookie-consent',
             array($this, 'render_admin_page')
@@ -694,10 +694,10 @@ class CCVE_Cookie_Consent {
 
             <div style="margin:16px 0;">
                 <p class="description">
-                    <?php esc_html_e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'cookie-consent-ve'); ?>
+                    <?php esc_html_e('Cookies are detected automatically on the website and blocked until the visitor accepts or denies — no scanning needed here.', 'vlad-enterprises-cookie-consent'); ?>
                     <?php
                     /* translators: %s: current plugin version number */
-                    echo ' ' . esc_html(sprintf(__('Current version: %s', 'cookie-consent-ve'), CCVE_VERSION));
+                    echo ' ' . esc_html(sprintf(__('Current version: %s', 'vlad-enterprises-cookie-consent'), CCVE_VERSION));
                     ?>
                 </p>
             </div>
@@ -707,17 +707,17 @@ class CCVE_Cookie_Consent {
 
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Auto Show Banner', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Auto Show Banner', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="ccve_settings[auto_show]" value="yes" <?php checked($this->settings['auto_show'], 'yes'); ?>>
-                                <?php esc_html_e('Show cookie banner automatically on first visit', 'cookie-consent-ve'); ?>
+                                <?php esc_html_e('Show cookie banner automatically on first visit', 'vlad-enterprises-cookie-consent'); ?>
                             </label>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php esc_html_e('Banner Position', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Banner Position', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <select name="ccve_settings[position]">
                                 <option value="bottom-right" <?php selected($this->settings['position'], 'bottom-right'); ?>>Bottom Right</option>
@@ -730,7 +730,7 @@ class CCVE_Cookie_Consent {
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php esc_html_e('Theme', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Theme', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <select name="ccve_settings[theme]">
                                 <option value="light" <?php selected($this->settings['theme'], 'light'); ?>>Light</option>
@@ -740,48 +740,48 @@ class CCVE_Cookie_Consent {
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php esc_html_e('Cookie Name', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Cookie Name', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <input type="text" name="ccve_settings[cookie_name]" value="<?php echo esc_attr($this->settings['cookie_name']); ?>" class="regular-text">
-                            <p class="description"><?php esc_html_e('Name of the cookie used to store preferences', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Name of the cookie used to store preferences', 'vlad-enterprises-cookie-consent'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php esc_html_e('Cookie Expiry (days)', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Cookie Expiry (days)', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <input type="number" name="ccve_settings[cookie_expiry]" value="<?php echo esc_attr($this->settings['cookie_expiry']); ?>" min="1" max="3650" class="small-text">
-                            <p class="description"><?php esc_html_e('Number of days until cookie expires', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Number of days until cookie expires', 'vlad-enterprises-cookie-consent'); ?></p>
                         </td>
                     </tr>
                     
                     <tr>
-                        <th scope="row"><?php esc_html_e('Reload on Change', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Reload on Change', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="ccve_settings[reload_on_change]" value="yes" <?php checked($this->settings['reload_on_change'], 'yes'); ?>>
-                                <?php esc_html_e('Reload page when preferences are changed', 'cookie-consent-ve'); ?>
+                                <?php esc_html_e('Reload page when preferences are changed', 'vlad-enterprises-cookie-consent'); ?>
                             </label>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php esc_html_e('Display Language', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Display Language', 'vlad-enterprises-cookie-consent'); ?></h2>
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><?php esc_html_e('Banner Language', 'cookie-consent-ve'); ?></th>
+                        <th scope="row"><?php esc_html_e('Banner Language', 'vlad-enterprises-cookie-consent'); ?></th>
                         <td>
                             <select name="ccve_settings[language]">
                                 <?php foreach ($this->languages() as $lang_code => $lang_label): ?>
                                     <option value="<?php echo esc_attr($lang_code); ?>" <?php selected($this->current_language(), $lang_code); ?>><?php echo esc_html($lang_label); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <p class="description"><?php esc_html_e('Language used for the banner and preferences modal on the website.', 'cookie-consent-ve'); ?></p>
+                            <p class="description"><?php esc_html_e('Language used for the banner and preferences modal on the website.', 'vlad-enterprises-cookie-consent'); ?></p>
                         </td>
                     </tr>
                 </table>
 
-                <h2><?php esc_html_e('Banner Text', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Banner Text', 'vlad-enterprises-cookie-consent'); ?></h2>
                 <?php
                 $cur_lang = $this->current_language();
                 $cur_label = $this->languages()[$cur_lang];
@@ -789,26 +789,26 @@ class CCVE_Cookie_Consent {
                 <p>
                     <?php
                     /* translators: %s: name of the currently selected language */
-                    printf(esc_html__('Text for the selected language: %s. Change "Banner Language" above and Save to edit the other language.', 'cookie-consent-ve'), '<strong>' . esc_html($cur_label) . '</strong>');
+                    printf(esc_html__('Text for the selected language: %s. Change "Banner Language" above and Save to edit the other language.', 'vlad-enterprises-cookie-consent'), '<strong>' . esc_html($cur_label) . '</strong>');
                     ?>
                 </p>
                 <?php
                 $text_labels = array(
-                    'title' => __('Banner Title', 'cookie-consent-ve'),
-                    'description' => __('Banner Description', 'cookie-consent-ve'),
-                    'acceptAll' => __('"Accept All" Button', 'cookie-consent-ve'),
-                    'rejectAll' => __('"Reject All" Button', 'cookie-consent-ve'),
-                    'settings' => __('"Settings" Button', 'cookie-consent-ve'),
-                    'modalTitle' => __('Preferences Modal Title', 'cookie-consent-ve'),
-                    'save' => __('"Save Preferences" Button', 'cookie-consent-ve'),
-                    'cancel' => __('"Cancel" Button', 'cookie-consent-ve'),
-                    'tableCookie' => __('Column: Cookie', 'cookie-consent-ve'),
-                    'tablePurpose' => __('Column: Purpose', 'cookie-consent-ve'),
-                    'tableDuration' => __('Column: Duration', 'cookie-consent-ve'),
-                    'tableStatus' => __('Column: Status', 'cookie-consent-ve'),
-                    'statusStored' => __('Status: stored now', 'cookie-consent-ve'),
-                    'statusIfAccepted' => __('Status: blocked until accept', 'cookie-consent-ve'),
-                    'noCookies' => __('"No cookies" message', 'cookie-consent-ve'),
+                    'title' => __('Banner Title', 'vlad-enterprises-cookie-consent'),
+                    'description' => __('Banner Description', 'vlad-enterprises-cookie-consent'),
+                    'acceptAll' => __('"Accept All" Button', 'vlad-enterprises-cookie-consent'),
+                    'rejectAll' => __('"Reject All" Button', 'vlad-enterprises-cookie-consent'),
+                    'settings' => __('"Settings" Button', 'vlad-enterprises-cookie-consent'),
+                    'modalTitle' => __('Preferences Modal Title', 'vlad-enterprises-cookie-consent'),
+                    'save' => __('"Save Preferences" Button', 'vlad-enterprises-cookie-consent'),
+                    'cancel' => __('"Cancel" Button', 'vlad-enterprises-cookie-consent'),
+                    'tableCookie' => __('Column: Cookie', 'vlad-enterprises-cookie-consent'),
+                    'tablePurpose' => __('Column: Purpose', 'vlad-enterprises-cookie-consent'),
+                    'tableDuration' => __('Column: Duration', 'vlad-enterprises-cookie-consent'),
+                    'tableStatus' => __('Column: Status', 'vlad-enterprises-cookie-consent'),
+                    'statusStored' => __('Status: stored now', 'vlad-enterprises-cookie-consent'),
+                    'statusIfAccepted' => __('Status: blocked until accept', 'vlad-enterprises-cookie-consent'),
+                    'noCookies' => __('"No cookies" message', 'vlad-enterprises-cookie-consent'),
                 );
                 $lt = $this->text_for($cur_lang);
                 ?>
@@ -827,8 +827,8 @@ class CCVE_Cookie_Consent {
                     <?php endforeach; ?>
                 </table>
 
-                <h2><?php esc_html_e('Cookie Categories', 'cookie-consent-ve'); ?></h2>
-                <p><?php esc_html_e('Configure cookie categories that users can manage', 'cookie-consent-ve'); ?></p>
+                <h2><?php esc_html_e('Cookie Categories', 'vlad-enterprises-cookie-consent'); ?></h2>
+                <p><?php esc_html_e('Configure cookie categories that users can manage', 'vlad-enterprises-cookie-consent'); ?></p>
 
                 <?php foreach ($this->settings['categories'] as $key => $category): ?>
                 <fieldset style="margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
@@ -836,34 +836,34 @@ class CCVE_Cookie_Consent {
                     
                     <table class="form-table">
                         <tr>
-                            <th scope="row"><?php esc_html_e('Enabled', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Enabled', 'vlad-enterprises-cookie-consent'); ?></th>
                             <td>
                                 <label>
                                     <input type="checkbox" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][enabled]" value="yes" <?php checked($category['enabled'], 'yes'); ?>>
-                                    <?php esc_html_e('Enable this category', 'cookie-consent-ve'); ?>
+                                    <?php esc_html_e('Enable this category', 'vlad-enterprises-cookie-consent'); ?>
                                 </label>
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php esc_html_e('Read Only', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Read Only', 'vlad-enterprises-cookie-consent'); ?></th>
                             <td>
                                 <label>
                                     <input type="checkbox" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][readonly]" value="yes" <?php checked($category['readonly'], 'yes'); ?>>
-                                    <?php esc_html_e('Users cannot disable this category', 'cookie-consent-ve'); ?>
+                                    <?php esc_html_e('Users cannot disable this category', 'vlad-enterprises-cookie-consent'); ?>
                                 </label>
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php esc_html_e('Display Name', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Display Name', 'vlad-enterprises-cookie-consent'); ?></th>
                             <td>
                                 <input type="text" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][name]" value="<?php echo esc_attr($category['name']); ?>" class="regular-text">
                             </td>
                         </tr>
                         
                         <tr>
-                            <th scope="row"><?php esc_html_e('Description', 'cookie-consent-ve'); ?></th>
+                            <th scope="row"><?php esc_html_e('Description', 'vlad-enterprises-cookie-consent'); ?></th>
                             <td>
                                 <textarea name="ccve_settings[categories][<?php echo esc_attr($key); ?>][description]" rows="3" class="large-text"><?php echo esc_textarea($category['description']); ?></textarea>
                             </td>
@@ -876,24 +876,24 @@ class CCVE_Cookie_Consent {
             </form>
             
             <div style="margin-top: 40px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
-                <h2><?php esc_html_e('Usage', 'cookie-consent-ve'); ?></h2>
+                <h2><?php esc_html_e('Usage', 'vlad-enterprises-cookie-consent'); ?></h2>
                 
-                <h3><?php esc_html_e('Shortcode', 'cookie-consent-ve'); ?></h3>
-                <p><?php esc_html_e('Add a cookie settings link anywhere in your content using:', 'cookie-consent-ve'); ?></p>
+                <h3><?php esc_html_e('Shortcode', 'vlad-enterprises-cookie-consent'); ?></h3>
+                <p><?php esc_html_e('Add a cookie settings link anywhere in your content using:', 'vlad-enterprises-cookie-consent'); ?></p>
                 <ul style="list-style: disc; margin-left: 20px;">
-                    <li><code>[ccve_settings]</code> - <?php esc_html_e('Simple link with default text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[ccve_settings text="Manage Cookies"]</code> - <?php esc_html_e('Custom text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[ccve_settings text="Cookie Preferences" button="yes"]</code> - <?php esc_html_e('Display as button', 'cookie-consent-ve'); ?></li>
+                    <li><code>[ccve_settings]</code> - <?php esc_html_e('Simple link with default text', 'vlad-enterprises-cookie-consent'); ?></li>
+                    <li><code>[ccve_settings text="Manage Cookies"]</code> - <?php esc_html_e('Custom text', 'vlad-enterprises-cookie-consent'); ?></li>
+                    <li><code>[ccve_settings text="Cookie Preferences" button="yes"]</code> - <?php esc_html_e('Display as button', 'vlad-enterprises-cookie-consent'); ?></li>
                 </ul>
                 
-                <h3 style="margin-top: 20px;"><?php esc_html_e('Widget', 'cookie-consent-ve'); ?></h3>
-                <p><?php esc_html_e('Go to Appearance > Widgets and add "Cookie Settings" widget to any widget area.', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Widget', 'vlad-enterprises-cookie-consent'); ?></h3>
+                <p><?php esc_html_e('Go to Appearance > Widgets and add "Cookie Settings" widget to any widget area.', 'vlad-enterprises-cookie-consent'); ?></p>
                 
-                <h3 style="margin-top: 20px;"><?php esc_html_e('Gutenberg Block', 'cookie-consent-ve'); ?></h3>
-                <p><?php esc_html_e('Search for "Cookie Settings" in the block inserter.', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Gutenberg Block', 'vlad-enterprises-cookie-consent'); ?></h3>
+                <p><?php esc_html_e('Search for "Cookie Settings" in the block inserter.', 'vlad-enterprises-cookie-consent'); ?></p>
                 
-                <h3 style="margin-top: 20px;"><?php esc_html_e('Gated Scripts', 'cookie-consent-ve'); ?></h3>
-                <p><?php esc_html_e('To gate your scripts by consent, add these attributes to script tags:', 'cookie-consent-ve'); ?></p>
+                <h3 style="margin-top: 20px;"><?php esc_html_e('Gated Scripts', 'vlad-enterprises-cookie-consent'); ?></h3>
+                <p><?php esc_html_e('To gate your scripts by consent, add these attributes to script tags:', 'vlad-enterprises-cookie-consent'); ?></p>
                 <pre style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 4px; overflow-x: auto;">
 &lt;script type="text/plain" data-category="analytics"&gt;
     // Your analytics code here
@@ -915,9 +915,9 @@ class CCVE_Cookie_Consent_Widget extends WP_Widget {
     public function __construct() {
         parent::__construct(
             'cookie_consent_widget',
-            __('Cookie Settings', 'cookie-consent-ve'),
+            __('Cookie Settings', 'vlad-enterprises-cookie-consent'),
             array(
-                'description' => __('Display a link or button to open cookie preferences', 'cookie-consent-ve')
+                'description' => __('Display a link or button to open cookie preferences', 'vlad-enterprises-cookie-consent')
             )
         );
     }
@@ -950,13 +950,13 @@ class CCVE_Cookie_Consent_Widget extends WP_Widget {
         $is_button = !empty($instance['is_button']) ? $instance['is_button'] : false;
         ?>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_html_e('Title:', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_html_e('Title:', 'vlad-enterprises-cookie-consent'); ?></label>
             <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('title')); ?>" 
                    type="text" value="<?php echo esc_attr($title); ?>">
         </p>
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_html_e('Link/Button Text:', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('text')); ?>"><?php esc_html_e('Link/Button Text:', 'vlad-enterprises-cookie-consent'); ?></label>
             <input class="widefat" id="<?php echo esc_attr($this->get_field_id('text')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('text')); ?>" 
                    type="text" value="<?php echo esc_attr($text); ?>">
@@ -966,7 +966,7 @@ class CCVE_Cookie_Consent_Widget extends WP_Widget {
                    id="<?php echo esc_attr($this->get_field_id('is_button')); ?>" 
                    name="<?php echo esc_attr($this->get_field_name('is_button')); ?>" 
                    value="1" <?php checked($is_button, 1); ?>>
-            <label for="<?php echo esc_attr($this->get_field_id('is_button')); ?>"><?php esc_html_e('Display as button instead of link', 'cookie-consent-ve'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('is_button')); ?>"><?php esc_html_e('Display as button instead of link', 'vlad-enterprises-cookie-consent'); ?></label>
         </p>
         <?php
     }
