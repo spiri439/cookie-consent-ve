@@ -4,7 +4,7 @@ Tags: gdpr, cookie consent, cookie banner, privacy, consent
 Requires at least: 5.0
 Tested up to: 7.0
 Requires PHP: 7.0
-Stable tag: 1.1.8
+Stable tag: 1.1.9
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -23,13 +23,19 @@ Scripts are blocked *before* they run (not just hidden), so no analytics or mark
 * Script gating by consent: mark scripts with `type="text/plain"` and `data-category` and they only run once allowed.
 * Auto-clear of common analytics/marketing cookies (`_ga`, `_gid`, `_gcl_au`, `_fbp`, `fr`, `hubspotutk`, and more) when a category is declined.
 * Customizable banner position (5 positions), light/dark theme, cookie name and expiry.
-* `[cc_settings]` shortcode to drop a "Cookie Settings" link anywhere.
+* `[ccve_settings]` shortcode to drop a "Cookie Settings" link anywhere.
 * JavaScript API: `CookieConsent.show()`, `.showPreferences()`, `.acceptAll()`, `.rejectAll()`, `.getPreferences()`, `.reset()`.
 * Block and widget for the settings link.
 * Built-in English and Romanian text, fully editable.
 * Responsive design; runs early on `wp_head` so gating applies before third-party code loads.
 
 This plugin helps you collect and respect consent. It does not, by itself, make your site legally compliant — you are responsible for your cookie policy and for categorizing your own scripts correctly.
+
+== External services ==
+
+This plugin does not connect to, or send any data to, any external service. It runs entirely on your own site.
+
+Cookie and tag detection is performed locally in the visitor's browser by inspecting the cookies and `<script>` tags already present on the page. Service names such as `googletagmanager.com` or `connect.facebook.net` appear in the plugin only as text patterns used to recognise tags that your own site has added — the plugin itself never makes requests to those domains.
 
 == Installation ==
 
@@ -54,7 +60,7 @@ The script runs only after the visitor accepts that category.
 
 = How can visitors reopen the preferences later? =
 
-Use the shortcode `[cc_settings text="Cookie Settings"]` in any post, page, or widget, or call `CookieConsent.showPreferences()` from your own button.
+Use the shortcode `[ccve_settings text="Cookie Settings"]` in any post, page, or widget, or call `CookieConsent.showPreferences()` from your own button.
 
 = Does it clear cookies when consent is withdrawn? =
 
@@ -72,6 +78,11 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 
 == Changelog ==
 
+= 1.1.9 =
+* Prefixed the option, settings group and shortcode (`ccve_settings`) to avoid conflicts with other plugins. Existing settings are migrated automatically from the old option name.
+* Escaped the inline config output with `wp_json_encode()` using HTML/JS-safe flags.
+* Documented that the plugin uses no external services.
+
 = 1.1.8 =
 * Removed the self-update-from-GitHub feature (overwriting plugin files from an external source is not permitted on WordPress.org; updates come through the directory).
 * Removed the unused functions-helper.php example file, which contained a hardcoded plugin path. The plugin determines its own location via plugin_dir_url(__FILE__).
@@ -81,6 +92,9 @@ It ships with English and Romanian strings, and all banner/modal text is editabl
 * Added WordPress.org readme.
 
 == Upgrade Notice ==
+
+= 1.1.9 =
+Renames internal option/shortcode to a unique prefix (auto-migrates your settings) and hardens output escaping for WordPress.org compliance.
 
 = 1.1.8 =
 Removes the external GitHub self-updater for WordPress.org compliance.

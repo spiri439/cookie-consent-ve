@@ -3,7 +3,7 @@
  * Plugin Name: Cookie Consent VE
  * Plugin URI: https://github.com/spiri439/cookie-consent-ve
  * Description: GDPR-compliant cookie consent plugin with automatic cookie blocking, script gating, and preferences modal.
- * Version: 1.1.8
+ * Version: 1.1.9
  * Author: nextdoorentertainment
  * Author URI: https://vladenterprises.ro
  * License: MIT
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CCVE_VERSION', '1.1.8');
+define('CCVE_VERSION', '1.1.9');
 define('CCVE_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('CCVE_PLUGIN_URL', plugin_dir_url(__FILE__));
 
@@ -31,7 +31,7 @@ class CCVE_Cookie_Consent {
         add_action('wp_head', array($this, 'output_cookie_guard_early'), 0); // Priority 0 = EARLIEST possible
         add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_action('wp_footer', array($this, 'output_config'));
-        add_shortcode('cc_settings', array($this, 'shortcode_settings_link'));
+        add_shortcode('ccve_settings', array($this, 'shortcode_settings_link'));
         add_action('init', array($this, 'register_blocks'));
         add_action('widgets_init', array($this, 'register_widget'));
 
@@ -44,7 +44,16 @@ class CCVE_Cookie_Consent {
         // Load settings, merged over defaults so every top-level key always
         // exists (prevents the settings page from erroring on sites upgraded
         // from an older version whose saved options lack newer keys).
-        $saved = get_option('cc_settings', array());
+        $saved = get_option('ccve_settings', null);
+        if ($saved === null) {
+            // Migrate from the old unprefixed option name, if present.
+            $legacy = get_option('cc_settings', null);
+            if (is_array($legacy)) {
+                $saved = $legacy;
+                update_option('ccve_settings', $legacy);
+                delete_option('cc_settings');
+            }
+        }
         if (!is_array($saved)) { $saved = array(); }
         $this->settings = array_merge($this->get_default_settings(), $saved);
     }
@@ -157,7 +166,7 @@ class CCVE_Cookie_Consent {
     }
     
     public function register_settings() {
-        register_setting('cc_settings_group', 'cc_settings', array($this, 'sanitize_settings'));
+        register_setting('ccve_settings_group', 'ccve_settings', array($this, 'sanitize_settings'));
     }
     
     public function sanitize_settings($input) {
@@ -535,7 +544,7 @@ class CCVE_Cookie_Consent {
             function initCookieConsent() {
                 if (typeof CookieConsent !== 'undefined' && typeof CookieConsent.init === 'function') {
                     try {
-                        var config = <?php echo json_encode($this->get_js_config()); ?>;
+                        var config = <?php echo wp_json_encode($this->get_js_config(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
                         console.log('CookieConsent: Initializing with config:', config);
                         CookieConsent.init(config);
                         console.log('CookieConsent: Initialization complete');
@@ -694,14 +703,14 @@ class CCVE_Cookie_Consent {
             </div>
 
             <form method="post" action="options.php">
-                <?php settings_fields('cc_settings_group'); ?>
+                <?php settings_fields('ccve_settings_group'); ?>
 
                 <table class="form-table">
                     <tr>
                         <th scope="row"><?php esc_html_e('Auto Show Banner', 'cookie-consent-ve'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" name="cc_settings[auto_show]" value="yes" <?php checked($this->settings['auto_show'], 'yes'); ?>>
+                                <input type="checkbox" name="ccve_settings[auto_show]" value="yes" <?php checked($this->settings['auto_show'], 'yes'); ?>>
                                 <?php esc_html_e('Show cookie banner automatically on first visit', 'cookie-consent-ve'); ?>
                             </label>
                         </td>
@@ -710,7 +719,7 @@ class CCVE_Cookie_Consent {
                     <tr>
                         <th scope="row"><?php esc_html_e('Banner Position', 'cookie-consent-ve'); ?></th>
                         <td>
-                            <select name="cc_settings[position]">
+                            <select name="ccve_settings[position]">
                                 <option value="bottom-right" <?php selected($this->settings['position'], 'bottom-right'); ?>>Bottom Right</option>
                                 <option value="bottom-left" <?php selected($this->settings['position'], 'bottom-left'); ?>>Bottom Left</option>
                                 <option value="bottom-center" <?php selected($this->settings['position'], 'bottom-center'); ?>>Bottom Center</option>
@@ -723,7 +732,7 @@ class CCVE_Cookie_Consent {
                     <tr>
                         <th scope="row"><?php esc_html_e('Theme', 'cookie-consent-ve'); ?></th>
                         <td>
-                            <select name="cc_settings[theme]">
+                            <select name="ccve_settings[theme]">
                                 <option value="light" <?php selected($this->settings['theme'], 'light'); ?>>Light</option>
                                 <option value="dark" <?php selected($this->settings['theme'], 'dark'); ?>>Dark</option>
                             </select>
@@ -733,7 +742,7 @@ class CCVE_Cookie_Consent {
                     <tr>
                         <th scope="row"><?php esc_html_e('Cookie Name', 'cookie-consent-ve'); ?></th>
                         <td>
-                            <input type="text" name="cc_settings[cookie_name]" value="<?php echo esc_attr($this->settings['cookie_name']); ?>" class="regular-text">
+                            <input type="text" name="ccve_settings[cookie_name]" value="<?php echo esc_attr($this->settings['cookie_name']); ?>" class="regular-text">
                             <p class="description"><?php esc_html_e('Name of the cookie used to store preferences', 'cookie-consent-ve'); ?></p>
                         </td>
                     </tr>
@@ -741,7 +750,7 @@ class CCVE_Cookie_Consent {
                     <tr>
                         <th scope="row"><?php esc_html_e('Cookie Expiry (days)', 'cookie-consent-ve'); ?></th>
                         <td>
-                            <input type="number" name="cc_settings[cookie_expiry]" value="<?php echo esc_attr($this->settings['cookie_expiry']); ?>" min="1" max="3650" class="small-text">
+                            <input type="number" name="ccve_settings[cookie_expiry]" value="<?php echo esc_attr($this->settings['cookie_expiry']); ?>" min="1" max="3650" class="small-text">
                             <p class="description"><?php esc_html_e('Number of days until cookie expires', 'cookie-consent-ve'); ?></p>
                         </td>
                     </tr>
@@ -750,7 +759,7 @@ class CCVE_Cookie_Consent {
                         <th scope="row"><?php esc_html_e('Reload on Change', 'cookie-consent-ve'); ?></th>
                         <td>
                             <label>
-                                <input type="checkbox" name="cc_settings[reload_on_change]" value="yes" <?php checked($this->settings['reload_on_change'], 'yes'); ?>>
+                                <input type="checkbox" name="ccve_settings[reload_on_change]" value="yes" <?php checked($this->settings['reload_on_change'], 'yes'); ?>>
                                 <?php esc_html_e('Reload page when preferences are changed', 'cookie-consent-ve'); ?>
                             </label>
                         </td>
@@ -762,7 +771,7 @@ class CCVE_Cookie_Consent {
                     <tr>
                         <th scope="row"><?php esc_html_e('Banner Language', 'cookie-consent-ve'); ?></th>
                         <td>
-                            <select name="cc_settings[language]">
+                            <select name="ccve_settings[language]">
                                 <?php foreach ($this->languages() as $lang_code => $lang_label): ?>
                                     <option value="<?php echo esc_attr($lang_code); ?>" <?php selected($this->current_language(), $lang_code); ?>><?php echo esc_html($lang_label); ?></option>
                                 <?php endforeach; ?>
@@ -809,9 +818,9 @@ class CCVE_Cookie_Consent {
                         <th scope="row"><?php echo esc_html($tlabel); ?></th>
                         <td>
                             <?php if ($tk === 'description'): ?>
-                                <textarea class="large-text" rows="3" name="cc_settings[text][<?php echo esc_attr($cur_lang); ?>][<?php echo esc_attr($tk); ?>]"><?php echo esc_textarea($lt[$tk]); ?></textarea>
+                                <textarea class="large-text" rows="3" name="ccve_settings[text][<?php echo esc_attr($cur_lang); ?>][<?php echo esc_attr($tk); ?>]"><?php echo esc_textarea($lt[$tk]); ?></textarea>
                             <?php else: ?>
-                                <input type="text" class="regular-text" name="cc_settings[text][<?php echo esc_attr($cur_lang); ?>][<?php echo esc_attr($tk); ?>]" value="<?php echo esc_attr($lt[$tk]); ?>">
+                                <input type="text" class="regular-text" name="ccve_settings[text][<?php echo esc_attr($cur_lang); ?>][<?php echo esc_attr($tk); ?>]" value="<?php echo esc_attr($lt[$tk]); ?>">
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -830,7 +839,7 @@ class CCVE_Cookie_Consent {
                             <th scope="row"><?php esc_html_e('Enabled', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <label>
-                                    <input type="checkbox" name="cc_settings[categories][<?php echo esc_attr($key); ?>][enabled]" value="yes" <?php checked($category['enabled'], 'yes'); ?>>
+                                    <input type="checkbox" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][enabled]" value="yes" <?php checked($category['enabled'], 'yes'); ?>>
                                     <?php esc_html_e('Enable this category', 'cookie-consent-ve'); ?>
                                 </label>
                             </td>
@@ -840,7 +849,7 @@ class CCVE_Cookie_Consent {
                             <th scope="row"><?php esc_html_e('Read Only', 'cookie-consent-ve'); ?></th>
                             <td>
                                 <label>
-                                    <input type="checkbox" name="cc_settings[categories][<?php echo esc_attr($key); ?>][readonly]" value="yes" <?php checked($category['readonly'], 'yes'); ?>>
+                                    <input type="checkbox" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][readonly]" value="yes" <?php checked($category['readonly'], 'yes'); ?>>
                                     <?php esc_html_e('Users cannot disable this category', 'cookie-consent-ve'); ?>
                                 </label>
                             </td>
@@ -849,14 +858,14 @@ class CCVE_Cookie_Consent {
                         <tr>
                             <th scope="row"><?php esc_html_e('Display Name', 'cookie-consent-ve'); ?></th>
                             <td>
-                                <input type="text" name="cc_settings[categories][<?php echo esc_attr($key); ?>][name]" value="<?php echo esc_attr($category['name']); ?>" class="regular-text">
+                                <input type="text" name="ccve_settings[categories][<?php echo esc_attr($key); ?>][name]" value="<?php echo esc_attr($category['name']); ?>" class="regular-text">
                             </td>
                         </tr>
                         
                         <tr>
                             <th scope="row"><?php esc_html_e('Description', 'cookie-consent-ve'); ?></th>
                             <td>
-                                <textarea name="cc_settings[categories][<?php echo esc_attr($key); ?>][description]" rows="3" class="large-text"><?php echo esc_textarea($category['description']); ?></textarea>
+                                <textarea name="ccve_settings[categories][<?php echo esc_attr($key); ?>][description]" rows="3" class="large-text"><?php echo esc_textarea($category['description']); ?></textarea>
                             </td>
                         </tr>
                     </table>
@@ -872,9 +881,9 @@ class CCVE_Cookie_Consent {
                 <h3><?php esc_html_e('Shortcode', 'cookie-consent-ve'); ?></h3>
                 <p><?php esc_html_e('Add a cookie settings link anywhere in your content using:', 'cookie-consent-ve'); ?></p>
                 <ul style="list-style: disc; margin-left: 20px;">
-                    <li><code>[cc_settings]</code> - <?php esc_html_e('Simple link with default text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[cc_settings text="Manage Cookies"]</code> - <?php esc_html_e('Custom text', 'cookie-consent-ve'); ?></li>
-                    <li><code>[cc_settings text="Cookie Preferences" button="yes"]</code> - <?php esc_html_e('Display as button', 'cookie-consent-ve'); ?></li>
+                    <li><code>[ccve_settings]</code> - <?php esc_html_e('Simple link with default text', 'cookie-consent-ve'); ?></li>
+                    <li><code>[ccve_settings text="Manage Cookies"]</code> - <?php esc_html_e('Custom text', 'cookie-consent-ve'); ?></li>
+                    <li><code>[ccve_settings text="Cookie Preferences" button="yes"]</code> - <?php esc_html_e('Display as button', 'cookie-consent-ve'); ?></li>
                 </ul>
                 
                 <h3 style="margin-top: 20px;"><?php esc_html_e('Widget', 'cookie-consent-ve'); ?></h3>
